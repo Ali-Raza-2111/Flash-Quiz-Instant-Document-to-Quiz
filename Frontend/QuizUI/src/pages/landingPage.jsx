@@ -12,7 +12,6 @@ import {
   BarChart3,
   CheckCircle2,
   ArrowRight,
-  Play,
   Star
 } from 'lucide-react';
 import './landingPage.css';
@@ -107,7 +106,7 @@ const LandingPage = () => {
             <Link to="/login" className="btn btn-secondary">
               Sign In
             </Link>
-            <Link to="/login" className="btn btn-primary">
+            <Link to="/signup" className="btn btn-primary">
               Get Started
               <ChevronRight size={18} />
             </Link>
@@ -134,14 +133,13 @@ const LandingPage = () => {
           </p>
 
           <div className="hero-actions animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <Link to="/login" className="btn btn-primary btn-lg">
+            <Link to="/signup" className="btn btn-primary btn-lg">
               Start Learning Free
               <ArrowRight size={20} />
             </Link>
-            <button className="btn btn-outline btn-lg">
-              <Play size={20} />
-              Watch Demo
-            </button>
+            <Link to="/login" className="btn btn-outline btn-lg">
+              Sign In
+            </Link>
           </div>
 
           <div className="hero-stats animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
