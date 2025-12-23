@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/landingPage'
-import LoginPage from './pages/loginPage'
+import LoginPage from './pages/Auth/loginPage'
 import Dashboard from './pages/dashboard'
 import QuizPage from './pages/quizPage'
 import ResultPage from './pages/resultPage'
