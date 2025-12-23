@@ -1,68 +1,108 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import { login as loginApi, signup as signupApi } from '../services/api';
+import { createContext, useContext, useState, useEffect } from 'react';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('authToken'));
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if token exists in localStorage on load
-    const token = localStorage.getItem('token');
-    if (token) {
-      // You might want to validate the token or fetch user details here
-      setUser({ token }); 
+    // Check for existing token on mount
+    const storedToken = localStorage.getItem('authToken');
+    const storedUser = localStorage.getItem('user');
+    
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
+    setIsLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    setLoading(true);
-    setError(null);
     try {
-      const data = await loginApi(email, password);
-      localStorage.setItem('token', data.access_token);
-      setUser({ token: data.access_token });
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed');
-      throw err;
-    } finally {
-      setLoading(false);
+      // TODO: Replace with actual API call
+      // const response = await api.post('/auth/login', { email, password });
+      
+      // Simulated login for demo
+      const mockUser = {
+        id: '1',
+        email: email,
+        name: email.split('@')[0],
+        avatar: email.substring(0, 2).toUpperCase()
+      };
+      const mockToken = 'demo_token_' + Date.now();
+
+      localStorage.setItem('authToken', mockToken);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      setToken(mockToken);
+      setUser(mockUser);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
   const signup = async (name, email, password) => {
-    setLoading(true);
-    setError(null);
     try {
-      const data = await signupApi(name, email, password);
-      // Automatically login after signup or redirect to login
-      return data;
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Signup failed');
-      throw err;
-    } finally {
-      setLoading(false);
+      // TODO: Replace with actual API call
+      // const response = await api.post('/auth/signup', { name, email, password });
+      
+      // Simulated signup for demo
+      const mockUser = {
+        id: '1',
+        email: email,
+        name: name,
+        avatar: name.substring(0, 2).toUpperCase()
+      };
+      const mockToken = 'demo_token_' + Date.now();
+
+      localStorage.setItem('authToken', mockToken);
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      setToken(mockToken);
+      setUser(mockUser);
+      
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    setToken(null);
     setUser(null);
   };
 
+  const isAuthenticated = !!token;
+
   const value = {
     user,
-    loading,
-    error,
+    token,
+    isLoading,
+    isAuthenticated,
     login,
     signup,
-    logout,
+    logout
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export default AuthContext;
