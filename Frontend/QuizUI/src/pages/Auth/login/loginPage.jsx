@@ -1,8 +1,25 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../../../context/authContext';
 import './loginPage.css';
 
 const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { login, error, loading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await login(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error("Login failed", err);
+    }
+  };
+
   return (
     <div className="login-page">
       <div className="background-effects">
@@ -26,7 +43,9 @@ const LoginPage = () => {
             <p>Sign in to continue your learning journey</p>
           </div>
           
-          <form className="login-form">
+          {error && <div className="error-message" style={{color: 'red', marginBottom: '1rem', textAlign: 'center'}}>{error}</div>}
+
+          <form className="login-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input 
@@ -34,6 +53,9 @@ const LoginPage = () => {
                 id="email" 
                 placeholder="Enter your email"
                 className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
             
@@ -44,6 +66,9 @@ const LoginPage = () => {
                 id="password" 
                 placeholder="Enter your password"
                 className="form-input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
             
@@ -55,13 +80,13 @@ const LoginPage = () => {
               <a href="#" className="forgot-link">Forgot password?</a>
             </div>
             
-            <button type="submit" className="btn btn-primary btn-full">
-              Sign In
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
           
           <div className="login-footer">
-            <p>Don't have an account? <Link to="/login">Sign up</Link></p>
+            <p>Don't have an account? <Link to="/signup">Sign up</Link></p>
           </div>
         </div>
       </div>

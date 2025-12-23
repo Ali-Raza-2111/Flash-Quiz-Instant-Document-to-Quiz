@@ -8,6 +8,7 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.31.0",
     "fastapi[all]>=0.127.0",
+    "python-jose[cryptography]",
     "passlib[argon2]>=1.7.4",
     "scalar-fastapi>=1.5.0",
     "sqlalchemy>=2.0.45",
