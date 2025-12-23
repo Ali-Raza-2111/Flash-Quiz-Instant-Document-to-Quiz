@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="#0d1321"/>
+  <circle cx="50" cy="50" r="45" fill="url(#grad)" opacity="0.2"/>
+  <g fill="none" stroke="url(#grad)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Book shape -->
+    <path d="M25 30 C25 25, 30 22, 50 22 C70 22, 75 25, 75 30 L75 70 C75 75, 70 78, 50 78 C30 78, 25 75, 25 70 Z"/>
+    <path d="M50 22 L50 78"/>
+    <!-- Brain/lightbulb hint -->
+    <circle cx="50" cy="45" r="12" fill="url(#grad)" opacity="0.3"/>
+    <path d="M44 45 Q50 38, 56 45" stroke-width="3"/>
+    <path d="M47 52 L47 58 M53 52 L53 58" stroke-width="3"/>
+  </g>
+</svg>
