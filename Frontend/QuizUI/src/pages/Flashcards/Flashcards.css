@@ -223,6 +223,20 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .flashcards-page {
+    max-width: 100%;
+  }
+  
+  .flashcards-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  .header-info h1 {
+    font-size: 1.25rem;
+  }
+  
   .flashcard {
     height: 280px;
   }
@@ -251,5 +265,69 @@
     flex-wrap: wrap;
     justify-content: center;
     padding: var(--space-md) 0;
+  }
+  
+  .progress-stats {
+    gap: var(--space-md);
+  }
+  
+  .stat {
+    font-size: 0.8125rem;
+  }
+  
+  .flashcard-front,
+  .flashcard-back {
+    padding: var(--space-xl);
+  }
+  
+  .card-label {
+    top: var(--space-md);
+    left: var(--space-md);
+    font-size: 0.625rem;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  .flip-hint {
+    bottom: var(--space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .flashcard {
+    height: 240px;
+  }
+  
+  .flashcard-front p,
+  .flashcard-back p {
+    font-size: 1.125rem;
+  }
+  
+  .flashcard-front,
+  .flashcard-back {
+    padding: var(--space-lg);
+  }
+  
+  .action-btn {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 0.9375rem;
+  }
+  
+  .indicator {
+    width: 10px;
+    height: 10px;
+  }
+  
+  .progress-stats {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .header-info h1 {
+    font-size: 1.125rem;
+  }
+  
+  .header-info p {
+    font-size: 0.8125rem;
   }
 }

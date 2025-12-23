@@ -241,13 +241,109 @@
   font-weight: 500;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .auth-page {
+    padding: var(--space-lg);
+    align-items: flex-start;
+    padding-top: var(--space-2xl);
+  }
+  
+  .auth-container {
+    max-width: 100%;
+  }
+  
   .auth-card {
     padding: var(--space-xl);
+  }
+  
+  .auth-header .logo-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .auth-header .logo-text {
+    font-size: 1.5rem;
+  }
+  
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .auth-page .orb-1 {
+    width: 300px;
+    height: 300px;
+    top: -100px;
+    right: -100px;
+  }
+  
+  .auth-page .orb-2 {
+    width: 250px;
+    height: 250px;
+    bottom: -50px;
+    left: -50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    padding: var(--space-md);
+    padding-top: var(--space-xl);
+  }
+  
+  .auth-card {
+    padding: var(--space-lg);
   }
   
   .form-options {
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  .auth-header {
+    margin-bottom: var(--space-xl);
+  }
+  
+  .auth-header .logo {
+    margin-bottom: var(--space-lg);
+  }
+  
+  .auth-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .form-group label {
+    font-size: 0.8125rem;
+  }
+  
+  .form-input {
+    padding: var(--space-sm) var(--space-md);
+    padding-left: calc(var(--space-sm) + 28px);
+    font-size: 0.9375rem;
+  }
+  
+  .input-icon {
+    left: var(--space-sm);
+  }
+  
+  .toggle-password {
+    right: var(--space-sm);
+  }
+  
+  .back-link {
+    margin-bottom: var(--space-lg);
+  }
+  
+  .auth-footer {
+    margin-top: var(--space-lg);
+    padding-top: var(--space-lg);
+  }
+  
+  .checkbox-label {
+    font-size: 0.8125rem;
+  }
+  
+  .forgot-link {
+    font-size: 0.8125rem;
   }
 }

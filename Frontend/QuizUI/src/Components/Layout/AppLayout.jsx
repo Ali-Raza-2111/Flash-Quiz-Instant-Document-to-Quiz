@@ -102,7 +102,7 @@ const AppLayout = ({ children }) => {
                 className="user-menu-trigger"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="user-avatar">{user?.avatar || 'U'}</div>
+                <div className={`user-avatar ${userMenuOpen ? 'avatar-spin' : ''}`}>{user?.avatar || 'U'}</div>
                 <span className="user-name">{user?.name || 'User'}</span>
                 <ChevronDown size={16} />
               </button>
@@ -117,10 +117,6 @@ const AppLayout = ({ children }) => {
                     </div>
                   </div>
                   <div className="dropdown-divider"></div>
-                  <Link to="/dashboard" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                    <User size={18} />
-                    Profile
-                  </Link>
                   <button className="dropdown-item" onClick={handleLogout}>
                     <LogOut size={18} />
                     Logout

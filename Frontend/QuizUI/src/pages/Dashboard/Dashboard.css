@@ -230,6 +230,16 @@
   font-size: 0.875rem;
 }
 
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-header {
     flex-direction: column;
@@ -242,5 +252,121 @@
 
   .quiz-score {
     padding: 0;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  .stat-card {
+    padding: var(--space-lg);
+  }
+  
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  .quick-action-card {
+    padding: var(--space-md);
+  }
+  
+  .quick-action-card .action-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .welcome-text h1 {
+    font-size: 1.5rem;
+  }
+  
+  .recent-item {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+  
+  .quiz-info {
+    flex: 1 1 100%;
+    margin-bottom: var(--space-sm);
+  }
+  
+  .quiz-score {
+    flex: 0 0 auto;
+  }
+  
+  .btn-sm {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-page {
+    padding: 0;
+  }
+  
+  .dashboard-header {
+    margin-bottom: var(--space-lg);
+  }
+  
+  .welcome-text h1 {
+    font-size: 1.25rem;
+  }
+  
+  .stats-grid {
+    gap: var(--space-sm);
+  }
+  
+  .stat-card {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .stat-value {
+    font-size: 1.125rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .quick-actions-section h2,
+  .recent-section h2 {
+    font-size: 1.125rem;
+  }
+  
+  .recent-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  .quiz-info {
+    width: 100%;
+  }
+  
+  .quiz-details h3 {
+    font-size: 0.9375rem;
+  }
+  
+  .recent-item-actions {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
   }
 }

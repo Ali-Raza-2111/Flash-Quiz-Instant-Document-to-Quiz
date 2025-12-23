@@ -326,13 +326,88 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .upload-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-section {
+    order: 2;
+  }
+}
+
 @media (max-width: 900px) {
   .upload-container {
     grid-template-columns: 1fr;
   }
 }
 
+@media (max-width: 768px) {
+  .upload-page {
+    max-width: 100%;
+  }
+  
+  .upload-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .drop-zone {
+    padding: var(--space-2xl);
+    min-height: 250px;
+  }
+  
+  .upload-icon-wrapper {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .drop-zone-content h3 {
+    font-size: 1.125rem;
+  }
+  
+  .drop-zone-content p {
+    font-size: 0.9375rem;
+  }
+  
+  .settings-section {
+    padding: var(--space-lg);
+  }
+  
+  .settings-header h2 {
+    font-size: 1rem;
+  }
+  
+  .setting-group > label {
+    font-size: 0.8125rem;
+  }
+  
+  .radio-label {
+    font-size: 0.8125rem;
+    padding: var(--space-sm);
+  }
+  
+  .file-info {
+    padding: var(--space-md);
+  }
+  
+  .file-name {
+    font-size: 0.9375rem;
+  }
+}
+
 @media (max-width: 480px) {
+  .upload-header {
+    margin-bottom: var(--space-lg);
+  }
+  
+  .upload-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .upload-header p {
+    font-size: 0.875rem;
+  }
+  
   .drop-zone {
     padding: var(--space-xl);
     min-height: 200px;
@@ -340,5 +415,58 @@
 
   .radio-group {
     flex-direction: column;
+  }
+  
+  .upload-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    margin-bottom: var(--space-sm);
+  }
+  
+  .drop-zone-content h3 {
+    font-size: 1rem;
+  }
+  
+  .drop-zone-content p {
+    font-size: 0.875rem;
+  }
+  
+  .supported-formats {
+    font-size: 0.6875rem;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  .file-info {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .file-details {
+    width: 100%;
+  }
+  
+  .remove-file {
+    align-self: flex-end;
+    margin-top: var(--space-sm);
+  }
+  
+  .settings-section {
+    padding: var(--space-md);
+  }
+  
+  .slider-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+  
+  .slider-value {
+    width: 100%;
+    text-align: left;
+  }
+  
+  .generate-btn {
+    width: 100%;
   }
 }
