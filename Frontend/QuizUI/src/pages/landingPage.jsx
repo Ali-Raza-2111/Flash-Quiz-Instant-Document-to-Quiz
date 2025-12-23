@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 import { 
   BookOpen, 
   Brain, 
@@ -18,6 +19,7 @@ import './landingPage.css';
 
 const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,7 +93,7 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="container navbar-content">
-          <Link to="/" className="logo">
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="logo">
             <BookOpen className="logo-icon" />
             <span className="logo-text">QuizMaster</span>
           </Link>
@@ -329,7 +331,7 @@ const LandingPage = () => {
       <footer className="footer">
         <div className="container footer-content">
           <div className="footer-brand">
-            <Link to="/" className="logo">
+            <Link to={isAuthenticated ? '/dashboard' : '/'} className="logo">
               <BookOpen className="logo-icon" />
               <span className="logo-text">QuizMaster</span>
             </Link>
