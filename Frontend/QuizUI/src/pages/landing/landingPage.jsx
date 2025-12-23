@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 import { 
   BookOpen, 
   Brain, 
@@ -12,13 +13,13 @@ import {
   BarChart3,
   CheckCircle2,
   ArrowRight,
-  Play,
   Star
 } from 'lucide-react';
 import './landingPage.css';
 
 const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -92,7 +93,7 @@ const LandingPage = () => {
       {/* Navigation */}
       <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
         <div className="container navbar-content">
-          <Link to="/" className="logo">
+          <Link to={isAuthenticated ? '/dashboard' : '/'} className="logo">
             <BookOpen className="logo-icon" />
             <span className="logo-text">QuizMaster</span>
           </Link>
@@ -107,7 +108,7 @@ const LandingPage = () => {
             <Link to="/login" className="btn btn-secondary">
               Sign In
             </Link>
-            <Link to="/login" className="btn btn-primary">
+            <Link to="/signup" className="btn btn-primary">
               Get Started
               <ChevronRight size={18} />
             </Link>
@@ -134,14 +135,13 @@ const LandingPage = () => {
           </p>
 
           <div className="hero-actions animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-            <Link to="/login" className="btn btn-primary btn-lg">
+            <Link to="/signup" className="btn btn-primary btn-lg">
               Start Learning Free
               <ArrowRight size={20} />
             </Link>
-            <button className="btn btn-outline btn-lg">
-              <Play size={20} />
-              Watch Demo
-            </button>
+            <Link to="/login" className="btn btn-outline btn-lg">
+              Sign In
+            </Link>
           </div>
 
           <div className="hero-stats animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
@@ -331,7 +331,7 @@ const LandingPage = () => {
       <footer className="footer">
         <div className="container footer-content">
           <div className="footer-brand">
-            <Link to="/" className="logo">
+            <Link to={isAuthenticated ? '/dashboard' : '/'} className="logo">
               <BookOpen className="logo-icon" />
               <span className="logo-text">QuizMaster</span>
             </Link>
