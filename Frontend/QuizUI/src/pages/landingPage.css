@@ -601,6 +601,18 @@
   color: var(--text-primary);
 }
 
+.footer-column .team-member {
+  display: block;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  transition: color var(--transition-fast);
+}
+
+.footer-column .team-member:hover {
+  color: var(--ocean-glow);
+}
+
 .footer-bottom {
   border-top: 1px solid var(--glass-border);
   padding: var(--space-lg) 0;
