@@ -1,0 +1,7 @@
+asyncpg
+fastapi[all]
+scalar-fastapi
+sqlalchemy
+sqlmodel
+passlib[argon2]
+argon2-cffi
