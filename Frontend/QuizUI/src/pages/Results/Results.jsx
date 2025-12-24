@@ -14,7 +14,8 @@ import {
   Download,
   Brain,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Percent
 } from 'lucide-react';
 import './Results.css';
 
@@ -30,26 +31,8 @@ const Results = () => {
     if (storedResult) {
       setResult(JSON.parse(storedResult));
     } else {
-      // Demo data if no stored result
-      setResult({
-        quizId: attemptId,
-        score: 8,
-        total: 10,
-        timeTaken: '8:32',
-        answers: { 1: 1, 2: 2, 3: 0, 4: 1, 5: 2, 6: 0, 7: 1, 8: 2, 9: 0, 10: 2 },
-        questions: [
-          { id: 1, question: 'What is the powerhouse of the cell?', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Golgi Body'], correctAnswer: 1 },
-          { id: 2, question: 'Which organelle is responsible for protein synthesis?', options: ['Mitochondria', 'Nucleus', 'Ribosome', 'Lysosome'], correctAnswer: 2 },
-          { id: 3, question: 'The cell membrane is selectively permeable.', options: ['True', 'False'], correctAnswer: 0 },
-          { id: 4, question: 'What is the function of the Golgi apparatus?', options: ['Energy production', 'Protein modification and packaging', 'DNA replication', 'Cell division'], correctAnswer: 1 },
-          { id: 5, question: 'Which structure contains the genetic material?', options: ['Cytoplasm', 'Cell membrane', 'Nucleus', 'Vacuole'], correctAnswer: 2 },
-          { id: 6, question: 'Plant cells have cell walls while animal cells do not.', options: ['True', 'False'], correctAnswer: 0 },
-          { id: 7, question: 'What is the function of lysosomes?', options: ['Photosynthesis', 'Cellular digestion', 'Protein synthesis', 'Energy storage'], correctAnswer: 1 },
-          { id: 8, question: 'The endoplasmic reticulum is involved in:', options: ['Only protein synthesis', 'Only lipid synthesis', 'Both protein and lipid synthesis', 'Cell division only'], correctAnswer: 2 },
-          { id: 9, question: 'Chloroplasts are found in animal cells.', options: ['True', 'False'], correctAnswer: 1 },
-          { id: 10, question: 'What maintains the shape of a plant cell?', options: ['Cell membrane', 'Cytoplasm', 'Cell wall', 'Nucleus'], correctAnswer: 2 }
-        ]
-      });
+      // Redirect to upload if no result found
+      setResult(null);
     }
   }, [attemptId]);
 
@@ -64,7 +47,9 @@ const Results = () => {
     );
   }
 
-  const percentage = Math.round((result.score / result.total) * 100);
+  // Handle new format with answers array containing detailed info
+  const hasNewFormat = result.answers && Array.isArray(result.answers);
+  const percentage = result.percentage || Math.round((result.score / result.total) * 100);
   const isPassing = percentage >= 70;
   
   const toggleQuestion = (questionId) => {
@@ -84,7 +69,11 @@ const Results = () => {
   };
 
   const gradeInfo = getGrade(percentage);
-  const wrongAnswers = result.questions.filter(q => result.answers[q.id] !== q.correctAnswer);
+  
+  // Get wrong answers based on format
+  const wrongAnswers = hasNewFormat 
+    ? result.answers.filter(a => !a.is_correct)
+    : result.questions?.filter(q => result.answers[q.id] !== q.correctAnswer) || [];
 
   return (
     <AppLayout>
@@ -127,10 +116,12 @@ const Results = () => {
               <XCircle size={20} className="incorrect" />
               <span>{result.total - result.score} Incorrect</span>
             </div>
-            <div className="detail-item">
-              <Clock size={20} />
-              <span>{result.timeTaken || '8:32'}</span>
-            </div>
+            {result.usedSimilarity && (
+              <div className="detail-item similarity-badge">
+                <Percent size={20} />
+                <span>AI Similarity</span>
+              </div>
+            )}
           </div>
 
           <div className="score-actions">
@@ -156,16 +147,21 @@ const Results = () => {
               Review these topics to strengthen your understanding
             </p>
             <div className="weak-topics">
-              {wrongAnswers.slice(0, 3).map((q, index) => (
-                <div key={q.id} className="weak-topic">
+              {wrongAnswers.slice(0, 3).map((item, index) => (
+                <div key={index} className="weak-topic">
                   <Brain size={18} />
-                  <span>Question {q.id}: {q.question.substring(0, 50)}...</span>
+                  <span>
+                    {hasNewFormat 
+                      ? `Q${item.question_id}: ${item.question?.substring(0, 50)}...`
+                      : `Question ${item.id}: ${item.question.substring(0, 50)}...`
+                    }
+                  </span>
                 </div>
               ))}
             </div>
-            <Link to={`/flashcards/${result.quizId}`} className="btn btn-outline btn-full">
+            <Link to="/upload" className="btn btn-outline btn-full">
               <TrendingUp size={18} />
-              Practice with Flashcards
+              Try Another Quiz
             </Link>
           </div>
         )}
@@ -173,63 +169,166 @@ const Results = () => {
         {/* Questions Review */}
         <div className="questions-review">
           <h2>Question Review</h2>
+          {result.usedSimilarity && (
+            <p className="similarity-note">
+              ✨ Answers were evaluated using AI cosine similarity matching
+            </p>
+          )}
           <div className="questions-list">
-            {result.questions.map((question) => {
-              const userAnswer = result.answers[question.id];
-              const isCorrect = userAnswer === question.correctAnswer;
-              const isExpanded = expandedQuestions.includes(question.id);
+            {hasNewFormat ? (
+              // New format with detailed answers array
+              result.answers.map((answer, index) => {
+                const isCorrect = answer.is_correct;
+                const isExpanded = expandedQuestions.includes(answer.question_id);
 
-              return (
-                <div 
-                  key={question.id} 
-                  className={`question-item glass-card ${isCorrect ? 'correct' : 'incorrect'}`}
-                >
+                return (
                   <div 
-                    className="question-header"
-                    onClick={() => toggleQuestion(question.id)}
+                    key={answer.question_id} 
+                    className={`question-item glass-card ${isCorrect ? 'correct' : 'incorrect'}`}
                   >
-                    <div className="question-status">
-                      {isCorrect ? (
-                        <CheckCircle2 size={20} className="status-icon correct" />
-                      ) : (
-                        <XCircle size={20} className="status-icon incorrect" />
-                      )}
-                      <span className="question-number">Q{question.id}</span>
-                    </div>
-                    <p className="question-text">{question.question}</p>
-                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                  </div>
-
-                  {isExpanded && (
-                    <div className="question-details">
-                      <div className="answers-grid">
-                        {question.options.map((option, index) => (
-                          <div 
-                            key={index}
-                            className={`answer-item 
-                              ${index === question.correctAnswer ? 'correct-answer' : ''}
-                              ${index === userAnswer && !isCorrect ? 'user-wrong' : ''}
-                              ${index === userAnswer && isCorrect ? 'user-correct' : ''}
-                            `}
-                          >
-                            <span className="answer-letter">
-                              {String.fromCharCode(65 + index)}
-                            </span>
-                            <span className="answer-text">{option}</span>
-                            {index === question.correctAnswer && (
-                              <CheckCircle2 size={16} className="answer-icon" />
-                            )}
-                            {index === userAnswer && !isCorrect && (
-                              <XCircle size={16} className="answer-icon wrong" />
-                            )}
-                          </div>
-                        ))}
+                    <div 
+                      className="question-header"
+                      onClick={() => toggleQuestion(answer.question_id)}
+                    >
+                      <div className="question-status">
+                        {isCorrect ? (
+                          <CheckCircle2 size={20} className="status-icon correct" />
+                        ) : (
+                          <XCircle size={20} className="status-icon incorrect" />
+                        )}
+                        <span className="question-number">Q{answer.question_id}</span>
+                        {answer.similarity !== undefined && (
+                          <span className="similarity-score">
+                            {Math.round(answer.similarity * 100)}% match
+                          </span>
+                        )}
                       </div>
+                      <p className="question-text">{answer.question}</p>
+                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {isExpanded && (
+                      <div className="question-details">
+                        <div className="answer-comparison">
+                          <div className={`answer-box ${isCorrect ? 'correct' : 'user-wrong'}`}>
+                            <span className="answer-label">Your Answer:</span>
+                            <span className="answer-value">{answer.user_answer}</span>
+                          </div>
+                          <div className="answer-box correct-answer">
+                            <span className="answer-label">Correct Answer:</span>
+                            <span className="answer-value">{answer.correct_answer}</span>
+                          </div>
+                        </div>
+                        
+                        {answer.options && (
+                          <div className="answers-grid">
+                            {answer.options.map((option, idx) => (
+                              <div 
+                                key={idx}
+                                className={`answer-item 
+                                  ${idx === answer.correct_answer_index ? 'correct-answer' : ''}
+                                  ${idx === answer.user_answer_index && !isCorrect ? 'user-wrong' : ''}
+                                  ${idx === answer.user_answer_index && isCorrect ? 'user-correct' : ''}
+                                `}
+                              >
+                                <span className="answer-letter">
+                                  {String.fromCharCode(65 + idx)}
+                                </span>
+                                <span className="answer-text">{option}</span>
+                                {idx === answer.correct_answer_index && (
+                                  <CheckCircle2 size={16} className="answer-icon" />
+                                )}
+                                {idx === answer.user_answer_index && !isCorrect && (
+                                  <XCircle size={16} className="answer-icon wrong" />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {answer.explanation && (
+                          <div className="explanation-section">
+                            <div className="explanation-header">
+                              <Brain size={16} />
+                              <span>Explanation</span>
+                            </div>
+                            <p className="explanation-text">{answer.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              // Legacy format with questions array
+              result.questions?.map((question) => {
+                const userAnswer = result.answers[question.id];
+                const isCorrect = userAnswer === question.correctAnswer;
+                const isExpanded = expandedQuestions.includes(question.id);
+
+                return (
+                  <div 
+                    key={question.id} 
+                    className={`question-item glass-card ${isCorrect ? 'correct' : 'incorrect'}`}
+                  >
+                    <div 
+                      className="question-header"
+                      onClick={() => toggleQuestion(question.id)}
+                    >
+                      <div className="question-status">
+                        {isCorrect ? (
+                          <CheckCircle2 size={20} className="status-icon correct" />
+                        ) : (
+                          <XCircle size={20} className="status-icon incorrect" />
+                        )}
+                        <span className="question-number">Q{question.id}</span>
+                      </div>
+                      <p className="question-text">{question.question}</p>
+                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </div>
+
+                    {isExpanded && (
+                      <div className="question-details">
+                        <div className="answers-grid">
+                          {question.options.map((option, index) => (
+                            <div 
+                              key={index}
+                              className={`answer-item 
+                                ${index === question.correctAnswer ? 'correct-answer' : ''}
+                                ${index === userAnswer && !isCorrect ? 'user-wrong' : ''}
+                                ${index === userAnswer && isCorrect ? 'user-correct' : ''}
+                              `}
+                            >
+                              <span className="answer-letter">
+                                {String.fromCharCode(65 + index)}
+                              </span>
+                              <span className="answer-text">{option}</span>
+                              {index === question.correctAnswer && (
+                                <CheckCircle2 size={16} className="answer-icon" />
+                              )}
+                              {index === userAnswer && !isCorrect && (
+                                <XCircle size={16} className="answer-icon wrong" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {question.explanation && (
+                          <div className="explanation-section">
+                            <div className="explanation-header">
+                              <Brain size={16} />
+                              <span>Explanation</span>
+                            </div>
+                            <p className="explanation-text">{question.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

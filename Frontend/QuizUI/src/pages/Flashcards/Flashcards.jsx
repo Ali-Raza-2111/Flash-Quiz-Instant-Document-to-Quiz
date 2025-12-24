@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import AppLayout from '../../Components/Layout/AppLayout';
 import { 
   RotateCcw, 
   ChevronLeft, 
-  ChevronRight,
+  ChevronRight, 
   Lightbulb,
   Volume2
 } from 'lucide-react';
@@ -12,43 +12,47 @@ import './Flashcards.css';
 
 const Flashcards = () => {
   const { deckId } = useParams();
+  const location = useLocation();
   const [currentCard, setCurrentCard] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState([]);
   const [learningCards, setLearningCards] = useState([]);
 
+  // Get deck from location state or use sample/loading
+  const [deck, setDeck] = useState(() => {
+    if (location.state?.flashcards && Array.isArray(location.state.flashcards) && location.state.flashcards.length > 0) {
+      return {
+        id: 'generated',
+        title: 'Generated Flashcards',
+        cards: location.state.flashcards
+      };
+    }
+    return null;
+  });
+
+  /*
   // Sample flashcard data
   const deck = {
     id: deckId,
     title: 'Biology - Cell Structure',
     cards: [
-      {
-        id: 1,
-        front: 'What is the function of mitochondria?',
-        back: 'Mitochondria are the powerhouses of the cell, responsible for producing ATP through cellular respiration.'
-      },
-      {
-        id: 2,
-        front: 'What is the cell membrane made of?',
-        back: 'The cell membrane is made of a phospholipid bilayer with embedded proteins, forming a selectively permeable barrier.'
-      },
-      {
-        id: 3,
-        front: 'What is the nucleus?',
-        back: 'The nucleus is the control center of the cell, containing DNA and coordinating cell activities including growth, metabolism, and reproduction.'
-      },
-      {
-        id: 4,
-        front: 'What are ribosomes?',
-        back: 'Ribosomes are cellular structures responsible for protein synthesis. They can be found free in the cytoplasm or attached to the endoplasmic reticulum.'
-      },
-      {
-        id: 5,
-        front: 'What is the function of the Golgi apparatus?',
-        back: 'The Golgi apparatus modifies, packages, and ships proteins and lipids to their destinations inside or outside the cell.'
-      }
+      // ...
     ]
   };
+  */
+
+  if (!deck) {
+      return (
+          <AppLayout>
+              <div className="flashcards-page">
+                  <div className="flashcards-container">
+                      <h2>No flashcards found.</h2>
+                      <Link to="/upload" className="btn btn-primary">Go to Upload</Link>
+                  </div>
+              </div>
+          </AppLayout>
+      )
+  }
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);

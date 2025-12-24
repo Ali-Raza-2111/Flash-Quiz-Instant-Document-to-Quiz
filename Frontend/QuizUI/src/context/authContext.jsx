@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -23,59 +24,59 @@ export const AuthProvider = ({ children }) => {
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      // Set default header for future requests
+      api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await api.post('/auth/login', { email, password });
+      const formData = new FormData();
+      formData.append('username', email);
+      formData.append('password', password);
+
+      const response = await api.post('/token', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      });
+
+      const { access_token } = response.data;
       
-      // Simulated login for demo
-      const mockUser = {
-        id: '1',
+      // Get user info (optional, if backend supports it, otherwise construct basic user)
+      // For now, we'll just use the email
+      const userData = {
         email: email,
         name: email.split('@')[0],
         avatar: email.substring(0, 2).toUpperCase()
       };
-      const mockToken = 'demo_token_' + Date.now();
 
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      localStorage.setItem('authToken', access_token);
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      setToken(mockToken);
-      setUser(mockUser);
+      setToken(access_token);
+      setUser(userData);
+      
+      // Set default header
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.message };
+      console.error("Login error:", error);
+      return { success: false, error: error.response?.data?.detail || "Login failed" };
     }
   };
 
   const signup = async (name, email, password) => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await api.post('/auth/signup', { name, email, password });
+      await api.post('/user', { name, email, password });
       
-      // Simulated signup for demo
-      const mockUser = {
-        id: '1',
-        email: email,
-        name: name,
-        avatar: name.substring(0, 2).toUpperCase()
-      };
-      const mockToken = 'demo_token_' + Date.now();
-
-      localStorage.setItem('authToken', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      setToken(mockToken);
-      setUser(mockUser);
-      
-      return { success: true };
+      // Auto login after signup
+      return await login(email, password);
     } catch (error) {
-      return { success: false, error: error.message };
+      console.error("Signup error:", error);
+      return { success: false, error: error.response?.data?.detail || "Signup failed" };
     }
   };
 
@@ -84,6 +85,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    delete api.defaults.headers.common['Authorization'];
   };
 
   const isAuthenticated = !!token;

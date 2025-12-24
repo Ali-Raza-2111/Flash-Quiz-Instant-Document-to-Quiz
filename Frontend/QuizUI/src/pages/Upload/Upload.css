@@ -321,6 +321,13 @@
   color: var(--text-primary);
 }
 
+.setting-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: var(--space-xs);
+  margin-left: var(--space-xl);
+}
+
 .generate-btn {
   margin-top: var(--space-lg);
 }

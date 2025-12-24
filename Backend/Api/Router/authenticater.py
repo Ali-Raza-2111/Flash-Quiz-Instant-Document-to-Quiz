@@ -12,7 +12,7 @@ from Api.Models.reg_user import user as User
 
 SECRET_KEY = "MY_SUPER_SECRET_KEY"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 5
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 router = APIRouter()
 

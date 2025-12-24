@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../../Components/Layout/AppLayout';
+import { uploadPdf, generateQuiz } from '../../services/api';
 import { 
   Upload as UploadIcon, 
   FileText, 
@@ -22,7 +23,8 @@ const Upload = () => {
     difficulty: 'medium',
     questionCount: 10,
     questionType: 'mixed',
-    includeFlashcards: true
+    includeFlashcards: true,
+    useAgent: true  // Use agent-based quiz generation by default
   });
   
   const fileInputRef = useRef(null);
@@ -89,29 +91,35 @@ const Upload = () => {
     if (!file) return;
 
     setUploadStatus('uploading');
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    setUploadProgress(10);
 
-    // Simulate processing time
-    setTimeout(() => {
-      clearInterval(interval);
+    try {
+      // 1. Upload the PDF
+      await uploadPdf(file);
+      setUploadProgress(50);
       setUploadProgress(100);
       setUploadStatus('success');
       
-      // Navigate to quiz after short delay
+      // Navigate to quiz page with settings - questions will be generated one at a time
       setTimeout(() => {
-        navigate('/quiz/new-generated');
+        navigate('/quiz/new-generated', { 
+          state: { 
+            settings: {
+              difficulty: quizSettings.difficulty,
+              questionType: quizSettings.questionType,
+              questionCount: quizSettings.questionCount,
+              includeFlashcards: quizSettings.includeFlashcards,
+              useAgent: quizSettings.useAgent
+            }
+          } 
+        });
       }, 1500);
-    }, 2500);
+
+    } catch (error) {
+      console.error("Error in quiz generation flow:", error);
+      setUploadStatus('error');
+      setUploadProgress(0);
+    }
   };
 
   return (
@@ -266,6 +274,18 @@ const Upload = () => {
                   />
                   <span>Also generate flashcards</span>
                 </label>
+              </div>
+
+              <div className="setting-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={quizSettings.useAgent}
+                    onChange={(e) => setQuizSettings({ ...quizSettings, useAgent: e.target.checked })}
+                  />
+                  <span>Use Agent Mode (Recommended)</span>
+                </label>
+                <p className="setting-hint">Agent mode uses optimized chunking for faster, more accurate questions</p>
               </div>
             </div>
 

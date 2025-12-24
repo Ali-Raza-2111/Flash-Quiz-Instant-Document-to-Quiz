@@ -6,6 +6,7 @@ class dataBaseSetting(BaseSettings):
     POSTGRES_USER:str
     POSTGRES_PASSWORD:str
     POSTGRES_DB:str
+    GEMINI_API_KEY:str
     
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,199 +1,255 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppLayout from '../../Components/Layout/AppLayout';
+import { generateOneQuestion, checkAnswersSimilarity, generateOneQuestionWithAgent } from '../../services/api';
+import { formatOption } from '../../utils/formatters';
 import { 
-  Clock, 
-  ChevronLeft, 
   ChevronRight,
   CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Flag
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import './Quiz.css';
 
 const Quiz = () => {
-  const { quizId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswers, setSelectedAnswers] = useState({});
-  const [flaggedQuestions, setFlaggedQuestions] = useState([]);
-  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes
-  const [quizCompleted, setQuizCompleted] = useState(false);
-
-  // Sample quiz data
-  const quiz = {
-    id: quizId,
-    title: 'Biology Chapter 5: Cell Structure',
-    totalQuestions: 10,
-    timeLimit: 600,
-    questions: [
-      {
-        id: 1,
-        type: 'mcq',
-        question: 'What is the powerhouse of the cell?',
-        options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Golgi Body'],
-        correctAnswer: 1
-      },
-      {
-        id: 2,
-        type: 'mcq',
-        question: 'Which organelle is responsible for protein synthesis?',
-        options: ['Mitochondria', 'Nucleus', 'Ribosome', 'Lysosome'],
-        correctAnswer: 2
-      },
-      {
-        id: 3,
-        type: 'truefalse',
-        question: 'The cell membrane is selectively permeable.',
-        options: ['True', 'False'],
-        correctAnswer: 0
-      },
-      {
-        id: 4,
-        type: 'mcq',
-        question: 'What is the function of the Golgi apparatus?',
-        options: [
-          'Energy production',
-          'Protein modification and packaging',
-          'DNA replication',
-          'Cell division'
-        ],
-        correctAnswer: 1
-      },
-      {
-        id: 5,
-        type: 'mcq',
-        question: 'Which structure contains the genetic material of a cell?',
-        options: ['Cytoplasm', 'Cell membrane', 'Nucleus', 'Vacuole'],
-        correctAnswer: 2
-      },
-      {
-        id: 6,
-        type: 'truefalse',
-        question: 'Plant cells have cell walls while animal cells do not.',
-        options: ['True', 'False'],
-        correctAnswer: 0
-      },
-      {
-        id: 7,
-        type: 'mcq',
-        question: 'What is the function of lysosomes?',
-        options: [
-          'Photosynthesis',
-          'Cellular digestion',
-          'Protein synthesis',
-          'Energy storage'
-        ],
-        correctAnswer: 1
-      },
-      {
-        id: 8,
-        type: 'mcq',
-        question: 'The endoplasmic reticulum is involved in:',
-        options: [
-          'Only protein synthesis',
-          'Only lipid synthesis',
-          'Both protein and lipid synthesis',
-          'Cell division only'
-        ],
-        correctAnswer: 2
-      },
-      {
-        id: 9,
-        type: 'truefalse',
-        question: 'Chloroplasts are found in animal cells.',
-        options: ['True', 'False'],
-        correctAnswer: 1
-      },
-      {
-        id: 10,
-        type: 'mcq',
-        question: 'What maintains the shape of a plant cell?',
-        options: ['Cell membrane', 'Cytoplasm', 'Cell wall', 'Nucleus'],
-        correctAnswer: 2
-      }
-    ]
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [questionNumber, setQuestionNumber] = useState(1);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [allAnswers, setAllAnswers] = useState([]); // Store all answered questions
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previousQuestions, setPreviousQuestions] = useState([]);
+  
+  // Settings from Upload page
+  const settings = location.state?.settings || {
+    difficulty: 'medium',
+    questionType: 'mcq',
+    questionCount: 5,
+    useAgent: true  // Default to using agent-based generation
   };
+  
+  const totalQuestions = settings.questionCount || 5;
+  const useAgentMode = settings.useAgent !== false;  // Use agent by default
 
-  // Timer effect
-  useEffect(() => {
-    if (quizCompleted) return;
-
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitQuiz();
-          return 0;
+  // Fetch a new question
+  const fetchQuestion = async () => {
+    setIsLoading(true);
+    setError(null);
+    setSelectedAnswer(null);
+    
+    try {
+      let question;
+      
+      if (useAgentMode) {
+        // Use agent-based generation (your custom agent)
+        question = await generateOneQuestionWithAgent(previousQuestions);
+      } else {
+        // Use original RAG-based generation
+        question = await generateOneQuestion(
+          'general',
+          settings.difficulty,
+          settings.questionType,
+          previousQuestions
+        );
+      }
+      
+      if (question.error) {
+        setError(question.error);
+      } else {
+        // Assign proper ID based on question number
+        question.id = questionNumber;
+        setCurrentQuestion(question);
+        
+        // Track asked questions to avoid duplicates
+        if (question.question) {
+          setPreviousQuestions(prev => [...prev, question.question.substring(0, 50)]);
         }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [quizCompleted]);
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleAnswerSelect = (questionId, answerIndex) => {
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [questionId]: answerIndex
-    });
-  };
-
-  const handleFlagQuestion = (questionId) => {
-    if (flaggedQuestions.includes(questionId)) {
-      setFlaggedQuestions(flaggedQuestions.filter(id => id !== questionId));
-    } else {
-      setFlaggedQuestions([...flaggedQuestions, questionId]);
-    }
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < quiz.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    }
-  };
-
-  const handlePrevQuestion = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
-
-  const handleSubmitQuiz = () => {
-    setQuizCompleted(true);
-    // Calculate score and navigate to results
-    const score = quiz.questions.reduce((acc, q) => {
-      if (selectedAnswers[q.id] === q.correctAnswer) {
-        return acc + 1;
       }
-      return acc;
-    }, 0);
-
-    // Store results and navigate
-    const attemptId = Date.now();
-    localStorage.setItem(`quiz_result_${attemptId}`, JSON.stringify({
-      quizId,
-      score,
-      total: quiz.questions.length,
-      answers: selectedAnswers,
-      questions: quiz.questions
-    }));
-
-    navigate(`/results/${attemptId}`);
+    } catch (err) {
+      console.error('Error fetching question:', err);
+      setError('Failed to generate question. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const currentQ = quiz.questions[currentQuestion];
-  const answeredCount = Object.keys(selectedAnswers).length;
-  const progress = (answeredCount / quiz.questions.length) * 100;
+  // Load first question on mount
+  useEffect(() => {
+    fetchQuestion();
+  }, []);
+
+  const handleAnswerSelect = (answerIndex) => {
+    setSelectedAnswer(answerIndex);
+  };
+
+  const handleNextQuestion = async () => {
+    if (selectedAnswer === null) {
+      alert('Please select an answer before continuing.');
+      return;
+    }
+
+    // Store the answer with question data
+    const answerData = {
+      question_id: currentQuestion.id,
+      question: currentQuestion.question,
+      user_answer: currentQuestion.options[selectedAnswer],
+      correct_answer: currentQuestion.correctAnswerText,
+      user_answer_index: selectedAnswer,
+      correct_answer_index: currentQuestion.correctAnswer,
+      options: currentQuestion.options,
+      explanation: currentQuestion.explanation
+    };
+    
+    setAllAnswers(prev => [...prev, answerData]);
+
+    // Check if this was the last question
+    if (questionNumber >= totalQuestions) {
+      // Submit all answers for similarity checking
+      await submitAllAnswers([...allAnswers, answerData]);
+    } else {
+      // Move to next question
+      setQuestionNumber(prev => prev + 1);
+      fetchQuestion();
+    }
+  };
+
+  const submitAllAnswers = async (answers) => {
+    setIsSubmitting(true);
+    
+    try {
+      // Prepare answers for similarity check
+      const answersForCheck = answers.map(a => ({
+        question_id: a.question_id,
+        user_answer: a.user_answer,
+        correct_answer: a.correct_answer
+      }));
+      
+      // Check answers using cosine similarity
+      const results = await checkAnswersSimilarity(answersForCheck);
+      
+      // Combine results with question data for results page
+      const detailedResults = answers.map((answer, index) => ({
+        ...answer,
+        similarity: results.results[index]?.similarity || 0,
+        is_correct: results.results[index]?.is_correct || false
+      }));
+      
+      // Navigate to results
+      const attemptId = Date.now();
+      localStorage.setItem(`quiz_result_${attemptId}`, JSON.stringify({
+        quizId: 'generated',
+        score: results.score,
+        total: results.total,
+        percentage: results.percentage,
+        answers: detailedResults,
+        usedSimilarity: true
+      }));
+      
+      navigate(`/results/${attemptId}`);
+      
+    } catch (err) {
+      console.error('Error submitting answers:', err);
+      
+      // Fallback: Calculate score locally using index matching
+      const score = answers.reduce((acc, a) => {
+        return a.user_answer_index === a.correct_answer_index ? acc + 1 : acc;
+      }, 0);
+      
+      const attemptId = Date.now();
+      localStorage.setItem(`quiz_result_${attemptId}`, JSON.stringify({
+        quizId: 'generated',
+        score: score,
+        total: answers.length,
+        percentage: (score / answers.length) * 100,
+        answers: answers.map(a => ({
+          ...a,
+          is_correct: a.user_answer_index === a.correct_answer_index
+        })),
+        usedSimilarity: false,
+        fallbackReason: 'Similarity check failed'
+      }));
+      
+      navigate(`/results/${attemptId}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const progress = (questionNumber / totalQuestions) * 100;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="quiz-page">
+          <div className="quiz-loading glass-card">
+            <Loader2 size={48} className="spinner" />
+            <h2>Generating Question {questionNumber}...</h2>
+            <p>AI is creating a unique question for you</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="quiz-page">
+          <div className="quiz-error glass-card">
+            <AlertCircle size={48} />
+            <h2>Error</h2>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button className="btn btn-primary" onClick={fetchQuestion}>
+                Try Again
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate('/upload')}>
+                Upload New Document
+              </button>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Submitting state
+  if (isSubmitting) {
+    return (
+      <AppLayout>
+        <div className="quiz-page">
+          <div className="quiz-loading glass-card">
+            <Loader2 size={48} className="spinner" />
+            <h2>Checking Your Answers...</h2>
+            <p>Using AI similarity matching to evaluate your responses</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // No question loaded
+  if (!currentQuestion) {
+    return (
+      <AppLayout>
+        <div className="quiz-page">
+          <div className="quiz-error glass-card">
+            <AlertCircle size={48} />
+            <h2>No Question Available</h2>
+            <button className="btn btn-primary" onClick={() => navigate('/upload')}>
+              Upload a Document
+            </button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -201,14 +257,11 @@ const Quiz = () => {
         {/* Quiz Header */}
         <div className="quiz-header glass-card">
           <div className="quiz-info">
-            <h1>{quiz.title}</h1>
-            <p>Question {currentQuestion + 1} of {quiz.questions.length}</p>
+            <h1>Quiz</h1>
+            <p>Question {questionNumber} of {totalQuestions}</p>
           </div>
-          <div className="quiz-timer">
-            <Clock size={20} />
-            <span className={timeRemaining < 60 ? 'time-warning' : ''}>
-              {formatTime(timeRemaining)}
-            </span>
+          <div className="quiz-stats">
+            <span className="difficulty-badge">{settings.difficulty}</span>
           </div>
         </div>
 
@@ -217,88 +270,65 @@ const Quiz = () => {
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
-          <span className="progress-text">{answeredCount}/{quiz.questions.length} answered</span>
+          <span className="progress-text">{questionNumber}/{totalQuestions}</span>
         </div>
 
         {/* Question Card */}
         <div className="question-card glass-card">
           <div className="question-header">
             <span className="question-type">
-              {currentQ.type === 'mcq' ? 'Multiple Choice' : 'True/False'}
+              {currentQuestion.type === 'mcq' ? 'Multiple Choice' : 'True/False'}
             </span>
-            <button 
-              className={`flag-btn ${flaggedQuestions.includes(currentQ.id) ? 'flagged' : ''}`}
-              onClick={() => handleFlagQuestion(currentQ.id)}
-            >
-              <Flag size={18} />
-              {flaggedQuestions.includes(currentQ.id) ? 'Flagged' : 'Flag'}
-            </button>
+            <span className="question-number">#{questionNumber}</span>
           </div>
 
-          <h2 className="question-text">{currentQ.question}</h2>
+          <h2 className="question-text">{currentQuestion.question}</h2>
 
           <div className="options-list">
-            {currentQ.options.map((option, index) => (
-              <button
-                key={index}
-                className={`option-btn ${selectedAnswers[currentQ.id] === index ? 'selected' : ''}`}
-                onClick={() => handleAnswerSelect(currentQ.id, index)}
-              >
-                <span className="option-letter">
-                  {String.fromCharCode(65 + index)}
-                </span>
-                <span className="option-text">{option}</span>
-                {selectedAnswers[currentQ.id] === index && (
-                  <CheckCircle2 size={20} className="option-check" />
-                )}
-              </button>
-            ))}
+            {currentQuestion.options?.map((option, index) => {
+              const displayText = formatOption(option, 100);
+              const isTruncated = option.length > 100;
+              
+              return (
+                <button
+                  key={index}
+                  className={`option-btn ${selectedAnswer === index ? 'selected' : ''}`}
+                  onClick={() => handleAnswerSelect(index)}
+                  title={isTruncated ? option : undefined}
+                >
+                  <span className="option-letter">
+                    {String.fromCharCode(65 + index)}
+                  </span>
+                  <span className="option-text">{displayText}</span>
+                  {selectedAnswer === index && (
+                    <CheckCircle2 size={20} className="option-check" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Navigation */}
         <div className="quiz-navigation">
-          <button 
-            className="btn btn-secondary"
-            onClick={handlePrevQuestion}
-            disabled={currentQuestion === 0}
-          >
-            <ChevronLeft size={20} />
-            Previous
-          </button>
-
-          <div className="question-dots">
-            {quiz.questions.map((q, index) => (
-              <button
-                key={q.id}
-                className={`dot 
-                  ${index === currentQuestion ? 'active' : ''} 
-                  ${selectedAnswers[q.id] !== undefined ? 'answered' : ''}
-                  ${flaggedQuestions.includes(q.id) ? 'flagged' : ''}
-                `}
-                onClick={() => setCurrentQuestion(index)}
-              >
-                {index + 1}
-              </button>
-            ))}
+          <div className="answered-count">
+            <span>{allAnswers.length} answered</span>
           </div>
 
-          {currentQuestion === quiz.questions.length - 1 ? (
-            <button 
-              className="btn btn-primary"
-              onClick={handleSubmitQuiz}
-            >
-              Submit Quiz
-            </button>
-          ) : (
-            <button 
-              className="btn btn-primary"
-              onClick={handleNextQuestion}
-            >
-              Next
-              <ChevronRight size={20} />
-            </button>
-          )}
+          <button 
+            className="btn btn-primary btn-lg"
+            onClick={handleNextQuestion}
+            disabled={selectedAnswer === null}
+          >
+            {questionNumber >= totalQuestions ? (
+              <>Submit Quiz</>
+            ) : (
+              <>
+                Next Question
+                <ChevronRight size={20} />
+              </>
+            )}
+          </button>
         </div>
       </div>
     </AppLayout>
