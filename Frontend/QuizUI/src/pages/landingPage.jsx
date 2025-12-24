@@ -357,6 +357,12 @@ const LandingPage = () => {
               <a href="#">Contact</a>
               <a href="#">Privacy</a>
             </div>
+            <div className="footer-column">
+              <h4>Team</h4>
+              <span className="team-member">M.Ali</span>
+              <span className="team-member">Ali Raza</span>
+              <span className="team-member">Ahsaan</span>
+            </div>
           </div>
         </div>
 
