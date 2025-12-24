@@ -45,9 +45,15 @@ const Flashcards = () => {
       return (
           <AppLayout>
               <div className="flashcards-page">
-                  <div className="flashcards-container">
-                      <h2>No flashcards found.</h2>
-                      <Link to="/upload" className="btn btn-primary">Go to Upload</Link>
+                  <div className="flashcards-empty glass-card">
+                      <div className="empty-icon">
+                        <Lightbulb size={64} />
+                      </div>
+                      <h2>No Flashcards Found</h2>
+                      <p>Upload a document and enable flashcard generation to create flashcards.</p>
+                      <Link to="/upload" className="btn btn-primary btn-lg">
+                        Go to Upload
+                      </Link>
                   </div>
               </div>
           </AppLayout>

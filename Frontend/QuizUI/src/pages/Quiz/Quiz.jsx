@@ -7,7 +7,9 @@ import {
   ChevronRight,
   CheckCircle2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Play,
+  Brain
 } from 'lucide-react';
 import './Quiz.css';
 
@@ -19,10 +21,11 @@ const Quiz = () => {
   const [questionNumber, setQuestionNumber] = useState(1);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [allAnswers, setAllAnswers] = useState([]); // Store all answered questions
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previousQuestions, setPreviousQuestions] = useState([]);
+  const [quizStarted, setQuizStarted] = useState(false);  // Track if quiz has started
   
   // Settings from Upload page
   const settings = location.state?.settings || {
@@ -77,10 +80,11 @@ const Quiz = () => {
     }
   };
 
-  // Load first question on mount
-  useEffect(() => {
+  // Start quiz handler
+  const handleStartQuiz = () => {
+    setQuizStarted(true);
     fetchQuestion();
-  }, []);
+  };
 
   const handleAnswerSelect = (answerIndex) => {
     setSelectedAnswer(answerIndex);
@@ -180,6 +184,41 @@ const Quiz = () => {
   };
 
   const progress = (questionNumber / totalQuestions) * 100;
+
+  // Start screen - show before quiz begins
+  if (!quizStarted) {
+    return (
+      <AppLayout>
+        <div className="quiz-page">
+          <div className="quiz-start-screen glass-card">
+            <div className="start-icon">
+              <Brain size={64} />
+            </div>
+            <h1>Ready to Start Your Quiz?</h1>
+            <p>You will answer {totalQuestions} questions generated from your uploaded document.</p>
+            <div className="quiz-settings-summary">
+              <div className="setting-item">
+                <span className="label">Difficulty:</span>
+                <span className="value">{settings.difficulty}</span>
+              </div>
+              <div className="setting-item">
+                <span className="label">Questions:</span>
+                <span className="value">{totalQuestions}</span>
+              </div>
+              <div className="setting-item">
+                <span className="label">Mode:</span>
+                <span className="value">{useAgentMode ? 'Agent AI' : 'RAG'}</span>
+              </div>
+            </div>
+            <button className="btn btn-primary btn-lg start-quiz-btn" onClick={handleStartQuiz}>
+              <Play size={24} />
+              Start Quiz
+            </button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   // Loading state
   if (isLoading) {

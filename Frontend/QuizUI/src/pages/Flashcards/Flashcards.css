@@ -331,3 +331,43 @@
     font-size: 0.8125rem;
   }
 }
+
+/* Empty State */
+.flashcards-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl);
+  text-align: center;
+  min-height: 500px;
+}
+
+.flashcards-empty .empty-icon {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-glow);
+  border-radius: 50%;
+  margin-bottom: var(--space-xl);
+  color: white;
+}
+
+.flashcards-empty h2 {
+  font-size: 1.75rem;
+  margin-bottom: var(--space-md);
+}
+
+.flashcards-empty p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: var(--space-2xl);
+  max-width: 400px;
+}
+
+.flashcards-empty .btn-lg {
+  padding: var(--space-lg) var(--space-3xl);
+  font-size: 1.125rem;
+}

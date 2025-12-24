@@ -17,16 +17,16 @@ def parse_quiz_line(line: str) -> dict:
     Returns a dict with question, options, and correct answer.
     """
     try:
-        if len(line) < 130:
+        if len(line) < 180:
             # Pad the line if too short
-            line = line.ljust(130)
+            line = line.ljust(180)
         
         correct_answer_letter = line[0].strip().upper()
-        question = line[2:30].strip()
-        option_a = line[31:55].strip()
-        option_b = line[56:80].strip()
-        option_c = line[81:105].strip()
-        option_d = line[106:130].strip()
+        question = line[2:40].strip()
+        option_a = line[41:75].strip()
+        option_b = line[76:110].strip()
+        option_c = line[111:145].strip()
+        option_d = line[146:180].strip()
         
         # Map letter to index
         answer_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}

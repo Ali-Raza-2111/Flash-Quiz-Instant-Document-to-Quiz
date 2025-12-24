@@ -9,24 +9,24 @@ import os
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-
+MODEL = os.getenv('MODEL')
 
 model_client = OpenAIChatCompletionClient(
-    model = 'gemini-2.5-flash',
+    model = MODEL,
     model_info=ModelInfo(vision=True, function_calling=True, json_output=True, family="unknown", structured_output=True),
     api_key=GEMINI_API_KEY,
 )
 
-Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',model_client=model_client,system_message='Generate a quiz where each line follows this character map. Use spaces for padding. Char 1: Correct Option (A/B/C/D). Char 3-30: Question (28 chars). Char 32-55: Option 1 (24 chars). Char 57-80: Option 2 (24 chars). Char 82-105: Option 3 (24 chars). Char 107-130: Option 4 (24 chars). Ensure spaces at indexes 2, 31, 56, 81, and 106. Output only the data strings.')
+Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',model_client=model_client,system_message='Generate a quiz where each line follows this character map. Use spaces for padding. Char 1: Correct Option (A/B/C/D). Char 3-40: Question (38 chars). Char 42-75: Option 1 (34 chars). Char 77-110: Option 2 (34 chars). Char 112-145: Option 3 (34 chars). Char 147-180: Option 4 (34 chars). Ensure spaces at indexes 2, 41, 76, 111, and 146. Output only the data strings.Strictely follows the character limits.')
 
 def parse_quiz_line(line):
-    # Adjusted ranges for +10 characters per field
+    # Adjusted ranges: Question 38 chars, Options 34 chars each
     correct_answer = line[0].strip()
-    question       = line[2:30].strip()
-    option_1       = line[31:55].strip()
-    option_2       = line[56:80].strip()
-    option_3       = line[81:105].strip()
-    option_4       = line[106:130].strip()
+    question       = line[2:40].strip()
+    option_1       = line[41:75].strip()
+    option_2       = line[76:110].strip()
+    option_3       = line[111:145].strip()
+    option_4       = line[146:180].strip()
 
     print(f"Correct: {correct_answer}")
     print(f"Question: {question}")

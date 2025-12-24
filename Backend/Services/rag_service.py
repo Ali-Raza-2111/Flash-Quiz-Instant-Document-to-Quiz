@@ -130,7 +130,7 @@ def check_answer_similarity(user_answer: str, correct_answer: str) -> dict:
         cosine_sim = np.dot(user_vec, correct_vec) / (np.linalg.norm(user_vec) * np.linalg.norm(correct_vec))
         
         # Consider correct if similarity > 0.90 (very high for near-exact match)
-        is_correct = cosine_sim > 0.90
+        is_correct = bool(cosine_sim > 0.90)
         
         return {
             "similarity": float(cosine_sim),
@@ -141,7 +141,7 @@ def check_answer_similarity(user_answer: str, correct_answer: str) -> dict:
         # Fallback to exact match on error
         return {
             "similarity": 1.0 if user_answer.strip().lower() == correct_answer.strip().lower() else 0.0,
-            "is_correct": user_answer.strip().lower() == correct_answer.strip().lower()
+            "is_correct": bool(user_answer.strip().lower() == correct_answer.strip().lower())
         }
 
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import AppLayout from '../../Components/Layout/AppLayout';
 import { 
   Trophy, 
@@ -15,14 +15,18 @@ import {
   Brain,
   TrendingUp,
   AlertTriangle,
-  Percent
+  Percent,
+  FileQuestion,
+  Upload
 } from 'lucide-react';
 import './Results.css';
 
 const Results = () => {
   const { attemptId } = useParams();
+  const navigate = useNavigate();
   const [expandedQuestions, setExpandedQuestions] = useState([]);
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Try to get result from localStorage
@@ -31,17 +35,46 @@ const Results = () => {
     if (storedResult) {
       setResult(JSON.parse(storedResult));
     } else {
-      // Redirect to upload if no result found
       setResult(null);
     }
+    setLoading(false);
   }, [attemptId]);
 
+  // Loading state
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="results-page">
+          <div className="results-loading glass-card">
+            <div className="loading-spinner"></div>
+            <p>Loading results...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // No result found - user hasn't attempted quiz
   if (!result) {
     return (
       <AppLayout>
-        <div className="loading-screen">
-          <div className="loading-spinner"></div>
-          <p>Loading results...</p>
+        <div className="results-page">
+          <div className="results-empty glass-card">
+            <div className="empty-icon">
+              <FileQuestion size={64} />
+            </div>
+            <h1>No Quiz Results Found</h1>
+            <p>It looks like you haven't attempted any quiz yet, or the results have expired.</p>
+            <div className="empty-actions">
+              <Link to="/upload" className="btn btn-primary btn-lg">
+                <Upload size={20} />
+                Upload Document & Start Quiz
+              </Link>
+              <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+                Go Back
+              </button>
+            </div>
+          </div>
         </div>
       </AppLayout>
     );
