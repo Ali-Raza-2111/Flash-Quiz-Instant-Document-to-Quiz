@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import AppLayout from '../../Components/Layout/AppLayout';
-import { generateFlashcardsWithAgent } from '../../services/api';
+import { generateOneFlashcardWithAgent } from '../../services/api';
 import { 
   RotateCcw, 
   ChevronLeft, 
   ChevronRight, 
   Lightbulb,
-  Volume2,
   Play,
   Loader2,
   AlertCircle,
@@ -19,7 +18,8 @@ const Flashcards = () => {
   const { deckId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [currentCard, setCurrentCard] = useState(0);
+  
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [knownCards, setKnownCards] = useState([]);
   const [learningCards, setLearningCards] = useState([]);
@@ -27,56 +27,138 @@ const Flashcards = () => {
   const [error, setError] = useState(null);
   const [flashcardsStarted, setFlashcardsStarted] = useState(false);
   const [flashcardCount, setFlashcardCount] = useState(5);
+  const [previousFlashcards, setPreviousFlashcards] = useState([]);
+  
+  // Store all generated flashcards
+  const [cards, setCards] = useState([]);
+  const [currentFlashcard, setCurrentFlashcard] = useState(null);
 
-  // Get deck from location state or initialize as null
-  const [deck, setDeck] = useState(() => {
-    if (location.state?.flashcards && Array.isArray(location.state.flashcards) && location.state.flashcards.length > 0) {
-      return {
-        id: 'generated',
-        title: 'Generated Flashcards',
-        cards: location.state.flashcards
-      };
-    }
-    return null;
-  });
-
-  // Auto-start if flashcards were passed from Upload page
+  // Check if flashcards were passed from Upload page
   useEffect(() => {
-    if (deck && deck.cards.length > 0) {
+    if (location.state?.flashcards && Array.isArray(location.state.flashcards) && location.state.flashcards.length > 0) {
+      setCards(location.state.flashcards);
+      setCurrentFlashcard(location.state.flashcards[0]);
       setFlashcardsStarted(true);
     }
   }, []);
 
-  // Generate flashcards handler
-  const handleGenerateFlashcards = async () => {
+  // Fetch a new flashcard
+  const fetchFlashcard = async () => {
     setIsLoading(true);
     setError(null);
+    setIsFlipped(false);
     
     try {
-      const result = await generateFlashcardsWithAgent(flashcardCount);
+      const flashcard = await generateOneFlashcardWithAgent(previousFlashcards);
       
-      if (result.error) {
-        setError(result.error);
-      } else if (result.flashcards && result.flashcards.length > 0) {
-        setDeck({
-          id: 'generated',
-          title: 'Generated Flashcards',
-          cards: result.flashcards
-        });
-        setFlashcardsStarted(true);
+      if (flashcard.error) {
+        setError(flashcard.error);
       } else {
-        setError('No flashcards were generated. Please try again.');
+        // Assign ID based on current count
+        flashcard.id = cards.length + 1;
+        setCurrentFlashcard(flashcard);
+        setCards(prev => [...prev, flashcard]);
+        
+        // Track generated flashcards to avoid duplicates
+        if (flashcard.front) {
+          setPreviousFlashcards(prev => [...prev, flashcard.front]);
+        }
       }
     } catch (err) {
-      console.error('Error generating flashcards:', err);
-      setError('Failed to generate flashcards. Make sure you have uploaded a document first.');
+      console.error('Error fetching flashcard:', err);
+      setError('Failed to generate flashcard. Make sure you have uploaded a document first.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Start flashcards handler
+  const handleStartFlashcards = () => {
+    setFlashcardsStarted(true);
+    fetchFlashcard();
+  };
+
+  const handleFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleNext = () => {
+    // If we have more cards already generated, show them
+    if (currentCardIndex < cards.length - 1) {
+      const nextIndex = currentCardIndex + 1;
+      setCurrentCardIndex(nextIndex);
+      setCurrentFlashcard(cards[nextIndex]);
+      setIsFlipped(false);
+    } 
+    // If we haven't reached the limit, generate a new one
+    else if (cards.length < flashcardCount) {
+      setCurrentCardIndex(cards.length);
+      fetchFlashcard();
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentCardIndex > 0) {
+      const prevIndex = currentCardIndex - 1;
+      setCurrentCardIndex(prevIndex);
+      setCurrentFlashcard(cards[prevIndex]);
+      setIsFlipped(false);
+    }
+  };
+
+  const handleKnown = () => {
+    if (currentFlashcard) {
+      const cardId = currentFlashcard.id;
+      if (!knownCards.includes(cardId)) {
+        setKnownCards([...knownCards, cardId]);
+        setLearningCards(learningCards.filter(id => id !== cardId));
+      }
+    }
+    // Move to next card
+    handleNext();
+  };
+
+  const handleLearning = () => {
+    if (currentFlashcard) {
+      const cardId = currentFlashcard.id;
+      if (!learningCards.includes(cardId)) {
+        setLearningCards([...learningCards, cardId]);
+        setKnownCards(knownCards.filter(id => id !== cardId));
+      }
+    }
+    // Move to next card
+    handleNext();
+  };
+
+  const handleReset = () => {
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+    setKnownCards([]);
+    setLearningCards([]);
+    if (cards.length > 0) {
+      setCurrentFlashcard(cards[0]);
+    }
+  };
+
+  const handleStartOver = () => {
+    setFlashcardsStarted(false);
+    setCards([]);
+    setCurrentFlashcard(null);
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+    setKnownCards([]);
+    setLearningCards([]);
+    setPreviousFlashcards([]);
+    setError(null);
+  };
+
+  // Calculate progress
+  const progress = flashcardCount > 0 ? ((currentCardIndex + 1) / flashcardCount) * 100 : 0;
+  const isLastCard = currentCardIndex >= flashcardCount - 1;
+  const canGoNext = currentCardIndex < cards.length - 1 || cards.length < flashcardCount;
+
   // Start screen - show before flashcards are generated
-  if (!flashcardsStarted && !deck) {
+  if (!flashcardsStarted) {
     return (
       <AppLayout>
         <div className="flashcards-page">
@@ -85,7 +167,7 @@ const Flashcards = () => {
               <Lightbulb size={64} />
             </div>
             <h1>Generate Flashcards</h1>
-            <p>Create flashcards from your uploaded document to help you study and memorize key concepts.</p>
+            <p>Create flashcards one at a time from your uploaded document to help you study and memorize key concepts.</p>
             
             <div className="flashcard-settings">
               <div className="setting-item">
@@ -115,20 +197,11 @@ const Flashcards = () => {
 
             <button 
               className="btn btn-primary btn-lg start-btn" 
-              onClick={handleGenerateFlashcards}
+              onClick={handleStartFlashcards}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <>
-                  <Loader2 size={24} className="spinner" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Play size={24} />
-                  Generate Flashcards
-                </>
-              )}
+              <Play size={24} />
+              Start Flashcards
             </button>
 
             <p className="upload-hint">
@@ -141,22 +214,22 @@ const Flashcards = () => {
   }
 
   // Loading state while generating
-  if (isLoading) {
+  if (isLoading && !currentFlashcard) {
     return (
       <AppLayout>
         <div className="flashcards-page">
           <div className="flashcards-loading glass-card">
             <Loader2 size={48} className="spinner" />
-            <h2>Generating Flashcards...</h2>
-            <p>AI is creating flashcards from your document</p>
+            <h2>Generating Flashcard {currentCardIndex + 1}...</h2>
+            <p>AI is creating a flashcard from your document</p>
           </div>
         </div>
       </AppLayout>
     );
   }
 
-  // Error state
-  if (error && !deck) {
+  // Error state with no cards
+  if (error && cards.length === 0) {
     return (
       <AppLayout>
         <div className="flashcards-page">
@@ -167,7 +240,7 @@ const Flashcards = () => {
             <h2>Error</h2>
             <p>{error}</p>
             <div className="error-actions">
-              <button className="btn btn-primary" onClick={handleGenerateFlashcards}>
+              <button className="btn btn-primary" onClick={fetchFlashcard}>
                 Try Again
               </button>
               <Link to="/upload" className="btn btn-secondary">
@@ -180,8 +253,8 @@ const Flashcards = () => {
     );
   }
 
-  // No deck available
-  if (!deck || !deck.cards || deck.cards.length === 0) {
+  // No flashcard loaded yet
+  if (!currentFlashcard) {
     return (
       <AppLayout>
         <div className="flashcards-page">
@@ -189,69 +262,16 @@ const Flashcards = () => {
             <div className="empty-icon">
               <Lightbulb size={64} />
             </div>
-            <h2>No Flashcards Available</h2>
-            <p>Upload a document and generate flashcards to start studying.</p>
-            <Link to="/upload" className="btn btn-primary btn-lg">
-              <Upload size={20} />
-              Go to Upload
-            </Link>
+            <h2>No Flashcard Available</h2>
+            <p>Something went wrong. Please try again.</p>
+            <button className="btn btn-primary btn-lg" onClick={handleStartOver}>
+              Start Over
+            </button>
           </div>
         </div>
       </AppLayout>
     );
   }
-
-  const handleFlip = () => {
-    setIsFlipped(!isFlipped);
-  };
-
-  const handleNext = () => {
-    if (currentCard < deck.cards.length - 1) {
-      setCurrentCard(currentCard + 1);
-      setIsFlipped(false);
-    }
-  };
-
-  const handlePrev = () => {
-    if (currentCard > 0) {
-      setCurrentCard(currentCard - 1);
-      setIsFlipped(false);
-    }
-  };
-
-  const handleKnown = () => {
-    const cardId = deck.cards[currentCard].id;
-    if (!knownCards.includes(cardId)) {
-      setKnownCards([...knownCards, cardId]);
-      setLearningCards(learningCards.filter(id => id !== cardId));
-    }
-    if (currentCard < deck.cards.length - 1) {
-      setCurrentCard(currentCard + 1);
-      setIsFlipped(false);
-    }
-  };
-
-  const handleLearning = () => {
-    const cardId = deck.cards[currentCard].id;
-    if (!learningCards.includes(cardId)) {
-      setLearningCards([...learningCards, cardId]);
-      setKnownCards(knownCards.filter(id => id !== cardId));
-    }
-    if (currentCard < deck.cards.length - 1) {
-      setCurrentCard(currentCard + 1);
-      setIsFlipped(false);
-    }
-  };
-
-  const handleReset = () => {
-    setCurrentCard(0);
-    setIsFlipped(false);
-    setKnownCards([]);
-    setLearningCards([]);
-  };
-
-  const currentFlashcard = deck.cards[currentCard];
-  const progress = ((currentCard + 1) / deck.cards.length) * 100;
 
   return (
     <AppLayout>
@@ -259,13 +279,18 @@ const Flashcards = () => {
         {/* Header */}
         <div className="flashcards-header">
           <div className="header-info">
-            <h1>{deck.title}</h1>
-            <p>Card {currentCard + 1} of {deck.cards.length}</p>
+            <h1>Flashcards</h1>
+            <p>Card {currentCardIndex + 1} of {flashcardCount}</p>
           </div>
-          <button className="btn btn-secondary" onClick={handleReset}>
-            <RotateCcw size={18} />
-            Reset
-          </button>
+          <div className="header-actions">
+            <button className="btn btn-secondary" onClick={handleReset}>
+              <RotateCcw size={18} />
+              Reset
+            </button>
+            <button className="btn btn-secondary" onClick={handleStartOver}>
+              New Set
+            </button>
+          </div>
         </div>
 
         {/* Progress */}
@@ -277,30 +302,37 @@ const Flashcards = () => {
             <span className="stat known">{knownCards.length} Known</span>
             <span className="stat learning">{learningCards.length} Learning</span>
             <span className="stat remaining">
-              {deck.cards.length - knownCards.length - learningCards.length} Remaining
+              {Math.max(0, flashcardCount - knownCards.length - learningCards.length)} Remaining
             </span>
           </div>
         </div>
 
         {/* Flashcard */}
         <div className="flashcard-container">
-          <div 
-            className={`flashcard ${isFlipped ? 'flipped' : ''}`}
-            onClick={handleFlip}
-          >
-            <div className="flashcard-inner">
-              <div className="flashcard-front glass-card">
-                <span className="card-label">Question</span>
-                <p>{currentFlashcard.front}</p>
-                <span className="flip-hint">Click to reveal answer</span>
-              </div>
-              <div className="flashcard-back glass-card">
-                <span className="card-label">Answer</span>
-                <p>{currentFlashcard.back}</p>
-                <span className="flip-hint">Click to see question</span>
+          {isLoading ? (
+            <div className="flashcard-loading">
+              <Loader2 size={32} className="spinner" />
+              <p>Generating next flashcard...</p>
+            </div>
+          ) : (
+            <div 
+              className={`flashcard ${isFlipped ? 'flipped' : ''}`}
+              onClick={handleFlip}
+            >
+              <div className="flashcard-inner">
+                <div className="flashcard-front glass-card">
+                  <span className="card-label">Question</span>
+                  <p>{currentFlashcard.front}</p>
+                  <span className="flip-hint">Click to reveal answer</span>
+                </div>
+                <div className="flashcard-back glass-card">
+                  <span className="card-label">Answer</span>
+                  <p>{currentFlashcard.back}</p>
+                  <span className="flip-hint">Click to see question</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -308,12 +340,14 @@ const Flashcards = () => {
           <button 
             className="action-btn learning-btn"
             onClick={handleLearning}
+            disabled={isLoading}
           >
             Still Learning
           </button>
           <button 
             className="action-btn known-btn"
             onClick={handleKnown}
+            disabled={isLoading}
           >
             Got It!
           </button>
@@ -324,25 +358,30 @@ const Flashcards = () => {
           <button 
             className="btn btn-secondary"
             onClick={handlePrev}
-            disabled={currentCard === 0}
+            disabled={currentCardIndex === 0 || isLoading}
           >
             <ChevronLeft size={20} />
             Previous
           </button>
 
           <div className="card-indicators">
-            {deck.cards.map((card, index) => (
+            {Array.from({ length: flashcardCount }, (_, index) => (
               <button
-                key={card.id}
+                key={index}
                 className={`indicator 
-                  ${index === currentCard ? 'active' : ''} 
-                  ${knownCards.includes(card.id) ? 'known' : ''}
-                  ${learningCards.includes(card.id) ? 'learning' : ''}
+                  ${index === currentCardIndex ? 'active' : ''} 
+                  ${index < cards.length && knownCards.includes(cards[index]?.id) ? 'known' : ''}
+                  ${index < cards.length && learningCards.includes(cards[index]?.id) ? 'learning' : ''}
+                  ${index >= cards.length ? 'pending' : ''}
                 `}
                 onClick={() => {
-                  setCurrentCard(index);
-                  setIsFlipped(false);
+                  if (index < cards.length) {
+                    setCurrentCardIndex(index);
+                    setCurrentFlashcard(cards[index]);
+                    setIsFlipped(false);
+                  }
                 }}
+                disabled={index >= cards.length}
               />
             ))}
           </div>
@@ -350,12 +389,20 @@ const Flashcards = () => {
           <button 
             className="btn btn-secondary"
             onClick={handleNext}
-            disabled={currentCard === deck.cards.length - 1}
+            disabled={!canGoNext || isLoading || (isLastCard && cards.length >= flashcardCount)}
           >
-            Next
+            {currentCardIndex < cards.length - 1 ? 'Next' : 'Generate Next'}
             <ChevronRight size={20} />
           </button>
         </div>
+
+        {/* Completion message */}
+        {cards.length >= flashcardCount && currentCardIndex === flashcardCount - 1 && (
+          <div className="completion-message glass-card">
+            <h3>🎉 All flashcards completed!</h3>
+            <p>You've gone through all {flashcardCount} flashcards. Review them again or start a new set.</p>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

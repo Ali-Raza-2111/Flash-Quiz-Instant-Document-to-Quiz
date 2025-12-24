@@ -14,19 +14,25 @@ from autogen_agentchat.messages import TextMessage
 def parse_quiz_line(line: str) -> dict:
     """
     Parse a single quiz line into structured data.
-    Returns a dict with question, options, and correct answer.
+    Format: ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D
     """
     try:
-        if len(line) < 180:
-            # Pad the line if too short
-            line = line.ljust(180)
+        parts = line.split('|')
+        if len(parts) < 6:
+            print(f"Invalid quiz line format, expected 6 parts: {line}")
+            return None
         
-        correct_answer_letter = line[0].strip().upper()
-        question = line[2:40].strip()
-        option_a = line[41:75].strip()
-        option_b = line[76:110].strip()
-        option_c = line[111:145].strip()
-        option_d = line[146:180].strip()
+        correct_answer_letter = parts[0].strip().upper()
+        question = parts[1].strip()
+        option_a = parts[2].strip()
+        option_b = parts[3].strip()
+        option_c = parts[4].strip()
+        option_d = parts[5].strip()
+        
+        # Validate we have content
+        if not question or not option_a or not option_b or not option_c or not option_d:
+            print(f"Empty fields in quiz line: {line}")
+            return None
         
         # Map letter to index
         answer_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
@@ -83,7 +89,18 @@ Each question should test understanding of key concepts from the text.
 TEXT:
 {context}
 
-Remember to follow the exact character format specified. Generate {num_questions} lines, one per question."""
+Generate {num_questions} lines in this EXACT format using | as delimiter:
+ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D
+
+Rules:
+- ANSWER is A, B, C, or D (the correct option)
+- QUESTION is the quiz question (max 50 chars)
+- Each OPTION is max 50 chars
+- Use | to separate ALL fields
+- One question per line
+- Output ONLY data lines, no headers or explanations
+
+Example: A|What is the capital of France?|Paris|London|Berlin|Madrid"""
 
         # Run the Assistant agent (from agent.py)
         response = await Assistant.run(task=[TextMessage(content=prompt, source='user')])
@@ -131,7 +148,17 @@ async def generate_single_question_with_agent(context: str, previous_questions: 
 TEXT:
 {context}
 
-Generate only 1 line following the exact character format."""
+Generate 1 line in this EXACT format using | as delimiter:
+ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D
+
+Rules:
+- ANSWER is A, B, C, or D (the correct option)
+- QUESTION is the quiz question (max 50 chars)
+- Each OPTION is max 50 chars
+- Use | to separate ALL fields
+- Output ONLY the data line, nothing else
+
+Example: A|What is the capital of France?|Paris|London|Berlin|Madrid"""
 
         # Run the Assistant agent (from agent.py)
         response = await Assistant.run(task=[TextMessage(content=prompt, source='user')])
@@ -159,16 +186,20 @@ Generate only 1 line following the exact character format."""
 def parse_flashcard_line(line: str) -> dict:
     """
     Parse a single flashcard line into structured data.
-    Format: Char 1-15: Question (15 chars), Char 16-30: Answer (15 chars)
+    Format: FRONT|BACK
     """
     try:
-        if len(line) < 30:
-            line = line.ljust(30)
+        parts = line.split('|')
+        if len(parts) < 2:
+            print(f"Invalid flashcard format, expected 2 parts: {line}")
+            return None
         
-        front = line[0:15].strip()
-        back = line[15:30].strip()
+        front = parts[0].strip()
+        back = parts[1].strip()
         
+        # Validate we have content
         if not front or not back:
+            print(f"Empty fields in flashcard line: {line}")
             return None
             
         return {
@@ -215,7 +246,17 @@ Each flashcard should capture a key concept, term, or fact from the text.
 TEXT:
 {context}
 
-Remember to follow the exact character format specified. Generate {num_flashcards} lines, one per flashcard."""
+Generate {num_flashcards} lines in this EXACT format using | as delimiter:
+FRONT|BACK
+
+Rules:
+- FRONT is the question or term
+- BACK is the answer or definition
+- Use | to separate the two fields
+- One flashcard per line
+- Output ONLY data lines, no headers or explanations
+
+Example: What is photosynthesis?|The process by which plants convert sunlight into energy"""
 
         # Run the flashcard_Agent (from agent.py)
         response = await flashcard_Agent.run(task=[TextMessage(content=prompt, source='user')])
@@ -239,3 +280,58 @@ Remember to follow the exact character format specified. Generate {num_flashcard
         traceback.print_exc()
         print(f"Error in flashcard generation: {e}")
         return {"flashcards": [], "error": str(e)}
+
+
+async def generate_single_flashcard_with_agent(context: str, previous_flashcards: list = None) -> dict:
+    """
+    Generate a single flashcard using the flashcard agent.
+    
+    Args:
+        context: The text content to generate flashcard from
+        previous_flashcards: List of previous flashcard fronts to avoid duplicates
+    
+    Returns:
+        dict with single flashcard data (front, back)
+    """
+    try:
+        avoid_text = ""
+        if previous_flashcards:
+            avoid_text = f"\nAvoid these topics: {', '.join(previous_flashcards[:5])}"
+        
+        prompt = f"""Based on the following text, generate exactly 1 flashcard.
+Create a key concept, term, or important fact from the text.{avoid_text}
+
+TEXT:
+{context}
+
+Generate 1 line in this EXACT format using | as delimiter:
+FRONT|BACK
+
+Rules:
+- FRONT is the question or term
+- BACK is the answer or definition
+- Use | to separate the two fields
+- Output ONLY the data line, nothing else
+
+Example: What is photosynthesis?|The process by which plants convert sunlight into energy"""
+
+        # Run the flashcard_Agent (from agent.py)
+        response = await flashcard_Agent.run(task=[TextMessage(content=prompt, source='user')])
+        response_content = response.messages[-1].content
+        
+        print(f"Single flashcard response: {response_content}")
+        
+        # Parse single flashcard
+        lines = response_content.strip().split('\n')
+        for line in lines:
+            if line.strip():
+                parsed = parse_flashcard_line(line)
+                if parsed:
+                    parsed["id"] = 1
+                    return parsed
+        
+        return {"error": "Failed to generate flashcard"}
+        
+    except Exception as e:
+        print(f"Error generating single flashcard: {e}")
+        return {"error": str(e)}

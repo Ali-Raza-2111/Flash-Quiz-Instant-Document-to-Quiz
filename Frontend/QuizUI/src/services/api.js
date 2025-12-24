@@ -128,4 +128,21 @@ export const generateFlashcardsWithAgent = async (numFlashcards = 5) => {
   }
 };
 
+// Generate a single flashcard using agent
+export const generateOneFlashcardWithAgent = async (previousFlashcards = []) => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (previousFlashcards.length > 0) {
+      params.append('previous_flashcards', previousFlashcards.join(','));
+    }
+    
+    const response = await api.post(`/quiz/agent/generate-one-flashcard?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error generating flashcard with agent:', error);
+    throw error;
+  }
+};
+
 export default api;

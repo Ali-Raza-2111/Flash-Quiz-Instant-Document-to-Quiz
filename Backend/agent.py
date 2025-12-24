@@ -17,18 +17,23 @@ model_client = OpenAIChatCompletionClient(
     api_key=GEMINI_API_KEY,
 )
 
-Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',model_client=model_client,system_message='Generate a quiz where each line follows this character map. Use spaces for padding. Char 1: Correct Option (A/B/C/D). Char 3-40: Question (38 chars). Char 42-75: Option 1 (34 chars). Char 77-110: Option 2 (34 chars). Char 112-145: Option 3 (34 chars). Char 147-180: Option 4 (34 chars). Ensure spaces at indexes 2, 41, 76, 111, and 146. Output only the data strings.Strictely follows the character limits.')
+Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',model_client=model_client,system_message='Generate quiz questions in this EXACT format using | as delimiter: ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D. Rules: 1) ANSWER is single letter A/B/C/D indicating correct option. 2) QUESTION is the quiz question (max 50 chars). 3) Each OPTION is max 50 chars. 4) Use | to separate ALL fields. 5) One question per line. 6) Output ONLY data lines, no headers or explanations. Example: A|What is the capital of France?|Paris|London|Berlin|Madrid')
 
-flashcard_Agent = AssistantAgent(name='FlashcardAgent',description='A helpful Flashcard Generator',model_client=model_client,system_message='Generate flashcards in the format that first 15 character is the question and the last 15 characters are the answer. Use spaces for padding. Char 1-15: Question (15 chars). Char 16-30: Answer (15 chars). Ensure spaces at indexes 15 .')
+flashcard_Agent = AssistantAgent(name='FlashcardAgent',description='A helpful Flashcard Generator',model_client=model_client,system_message='Generate flashcards in this EXACT format using | as delimiter: FRONT|BACK. Rules: 1) FRONT is the question or term (the front of the flashcard). 2) BACK is the answer or definition (the back of the flashcard). 3) Use | to separate the two fields. 4) One flashcard per line. 5) Output ONLY data lines, no headers or explanations. Example: What is photosynthesis?|The process by which plants convert sunlight into energy')
 
 def parse_quiz_line(line):
-    # Adjusted ranges: Question 38 chars, Options 34 chars each
-    correct_answer = line[0].strip()
-    question       = line[2:40].strip()
-    option_1       = line[41:75].strip()
-    option_2       = line[76:110].strip()
-    option_3       = line[111:145].strip()
-    option_4       = line[146:180].strip()
+    # Format: ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D
+    parts = line.split('|')
+    if len(parts) < 6:
+        print(f"Invalid line format: {line}")
+        return
+    
+    correct_answer = parts[0].strip().upper()
+    question       = parts[1].strip()
+    option_1       = parts[2].strip()
+    option_2       = parts[3].strip()
+    option_3       = parts[4].strip()
+    option_4       = parts[5].strip()
 
     print(f"Correct: {correct_answer}")
     print(f"Question: {question}")
@@ -39,8 +44,14 @@ def parse_quiz_line(line):
 
 
 def get_flashcard_line(line):
-    question = line[0:15].strip()
-    answer   = line[15:30].strip()
+    # Format: FRONT|BACK
+    parts = line.split('|')
+    if len(parts) < 2:
+        print(f"Invalid flashcard format: {line}")
+        return
+    
+    question = parts[0].strip()
+    answer   = parts[1].strip()
 
     print(f"Flashcard Question: {question}")
     print(f"Flashcard Answer: {answer}")

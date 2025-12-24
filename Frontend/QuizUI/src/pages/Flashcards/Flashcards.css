@@ -538,3 +538,84 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Pending indicator for not-yet-generated cards */
+.indicator.pending {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px dashed var(--glass-border);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Header actions */
+.header-actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+/* Inline flashcard loading state */
+.flashcard-loading {
+  width: 100%;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: var(--glass-white);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--glass-border);
+}
+
+.flashcard-loading p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Completion message */
+.completion-message {
+  margin-top: var(--space-2xl);
+  padding: var(--space-xl);
+  text-align: center;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.completion-message h3 {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-sm);
+  color: var(--accent-success);
+}
+
+.completion-message p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Action buttons disabled state */
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .header-actions {
+    flex-direction: row;
+    gap: var(--space-sm);
+  }
+  
+  .header-actions .btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+  }
+  
+  .flashcard-loading {
+    height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flashcard-loading {
+    height: 240px;
+  }
+}
