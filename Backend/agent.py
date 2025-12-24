@@ -21,6 +21,8 @@ Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',mo
 
 flashcard_Agent = AssistantAgent(name='FlashcardAgent',description='A helpful Flashcard Generator',model_client=model_client,system_message='Generate flashcards in this EXACT format using | as delimiter: FRONT|BACK. Rules: 1) FRONT is the question or term (the front of the flashcard). 2) BACK is the answer or definition (the back of the flashcard). 3) Use | to separate the two fields. 4) One flashcard per line. 5) Output ONLY data lines, no headers or explanations. Example: What is photosynthesis?|The process by which plants convert sunlight into energy')
 
+
+Rag_assistant = AssistantAgent(name="RagAssistant",description="An assistant that uses Retrieval-Augmented Generation (RAG) to answer questions based on provided context.",model_client=model_client,system_message="You are a knowledgeable assistant that provides accurate answers based on the given context. Use the context to answer questions factually and concisely. If the answer is not in the context, respond with 'I don't know.'")
 def parse_quiz_line(line):
     # Format: ANSWER|QUESTION|OPTION_A|OPTION_B|OPTION_C|OPTION_D
     parts = line.split('|')

@@ -145,4 +145,15 @@ export const generateOneFlashcardWithAgent = async (previousFlashcards = []) => 
   }
 };
 
+// Chat with RAG assistant about the uploaded document
+export const chatWithDocument = async (message) => {
+  try {
+    const response = await api.post('/quiz/chat', { message });
+    return response.data;
+  } catch (error) {
+    console.error('Error chatting with document:', error);
+    throw error;
+  }
+};
+
 export default api;

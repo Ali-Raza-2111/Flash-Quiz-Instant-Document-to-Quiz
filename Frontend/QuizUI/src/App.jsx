@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/authContext'
 import ProtectedRoute from './Components/ProtectedRoute'
 import ErrorBoundary from './Components/ErrorBoundary/ErrorBoundary'
+import FloatingChat from './Components/FloatingChat/FloatingChat'
 
 // Public Pages
 import LandingPage from './pages/landingPage'
@@ -32,26 +33,31 @@ function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+              <FloatingChat />
             </ProtectedRoute>
           } />
           <Route path="/upload" element={
             <ProtectedRoute>
               <Upload />
+              <FloatingChat />
             </ProtectedRoute>
           } />
           <Route path="/quiz/:quizId" element={
             <ProtectedRoute>
               <Quiz />
+              <FloatingChat />
             </ProtectedRoute>
           } />
           <Route path="/flashcards/:deckId" element={
             <ProtectedRoute>
               <Flashcards />
+              <FloatingChat />
             </ProtectedRoute>
           } />
           <Route path="/results/:attemptId" element={
             <ProtectedRoute>
               <Results />
+              <FloatingChat />
             </ProtectedRoute>
           } />
 

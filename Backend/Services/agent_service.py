@@ -7,7 +7,7 @@ import os
 # Add parent directory to path to import from agent.py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import Assistant, flashcard_Agent, parse_quiz_line as agent_parse_quiz_line
+from agent import Assistant, flashcard_Agent, Rag_assistant, parse_quiz_line as agent_parse_quiz_line
 from autogen_agentchat.messages import TextMessage
 
 
@@ -335,3 +335,42 @@ Example: What is photosynthesis?|The process by which plants convert sunlight in
     except Exception as e:
         print(f"Error generating single flashcard: {e}")
         return {"error": str(e)}
+
+
+# ============== RAG CHAT FUNCTIONS ==============
+
+async def chat_with_rag_agent(query: str, context: str) -> dict:
+    """
+    Chat with the RAG assistant using context retrieved from the vector database.
+    
+    Args:
+        query: The user's question
+        context: The relevant context retrieved from the vector database
+    
+    Returns:
+        dict with the assistant's response
+    """
+    try:
+        prompt = f"""Based on the following context from the uploaded document, answer the user's question.
+If the answer is not in the context, say "I couldn't find information about that in the uploaded document."
+
+CONTEXT:
+{context}
+
+USER QUESTION:
+{query}
+
+Provide a helpful, accurate, and concise answer based only on the context provided."""
+
+        # Run the Rag_assistant (from agent.py)
+        response = await Rag_assistant.run(task=[TextMessage(content=prompt, source='user')])
+        response_content = response.messages[-1].content
+        
+        return {
+            "response": response_content,
+            "query": query
+        }
+        
+    except Exception as e:
+        print(f"Error in RAG chat: {e}")
+        return {"error": str(e), "query": query}

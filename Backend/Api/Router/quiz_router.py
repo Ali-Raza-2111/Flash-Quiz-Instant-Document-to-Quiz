@@ -1,8 +1,8 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional
-from Services.rag_service import process_pdf, generate_quiz_from_rag, generate_single_question, check_quiz_answers, get_random_chunks
-from Services.agent_service import generate_quiz_with_agent, generate_single_question_with_agent, generate_flashcards_with_agent, generate_single_flashcard_with_agent
+from Services.rag_service import process_pdf, generate_quiz_from_rag, generate_single_question, check_quiz_answers, get_random_chunks, retrieve_documents
+from Services.agent_service import generate_quiz_with_agent, generate_single_question_with_agent, generate_flashcards_with_agent, generate_single_flashcard_with_agent, chat_with_rag_agent
 import json
 import re
 
@@ -17,6 +17,10 @@ class AnswerCheck(BaseModel):
 
 class CheckAnswersRequest(BaseModel):
     answers: List[AnswerCheck]
+
+
+class ChatRequest(BaseModel):
+    message: str
 
 
 @router.post("/upload-pdf")
@@ -155,3 +159,30 @@ async def generate_quiz(
     except json.JSONDecodeError:
         # If parsing fails, return the raw content but warn
         return {"raw_response": response_content, "message": "Failed to parse JSON from LLM response"}
+
+
+@router.post("/chat")
+async def chat_with_document(request: ChatRequest):
+    """
+    Chat with the RAG assistant about the uploaded document.
+    Uses cosine similarity to find relevant context from the vector database.
+    """
+    if not request.message or len(request.message.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Please enter a valid question.")
+    
+    # Retrieve relevant context from vector database using cosine similarity
+    context = retrieve_documents(request.message)
+    
+    if not context or len(context) < 20:
+        return {
+            "response": "I couldn't find relevant information in the uploaded document. Please make sure you've uploaded a document first.",
+            "query": request.message
+        }
+    
+    # Limit context size for efficiency
+    if len(context) > 2000:
+        context = context[:2000]
+    
+    # Chat with RAG agent
+    result = await chat_with_rag_agent(request.message, context)
+    return result
