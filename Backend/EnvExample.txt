@@ -1,0 +1,7 @@
+POSTGRES_SERVER = "localhost"
+POSTGRES_PORT = 5432
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "Your DataBase Password"
+POSTGRES_DB = "DataBase Name"
+GEMINI_API_KEY= "Your API Key"
+MODEL= "gemini-2.5-flash-lite"
