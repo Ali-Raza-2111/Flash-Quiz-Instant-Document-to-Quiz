@@ -19,6 +19,8 @@ model_client = OpenAIChatCompletionClient(
 
 Assistant = AssistantAgent(name='Assistant',description='A helpful Assistant',model_client=model_client,system_message='Generate a quiz where each line follows this character map. Use spaces for padding. Char 1: Correct Option (A/B/C/D). Char 3-40: Question (38 chars). Char 42-75: Option 1 (34 chars). Char 77-110: Option 2 (34 chars). Char 112-145: Option 3 (34 chars). Char 147-180: Option 4 (34 chars). Ensure spaces at indexes 2, 41, 76, 111, and 146. Output only the data strings.Strictely follows the character limits.')
 
+flashcard_Agent = AssistantAgent(name='FlashcardAgent',description='A helpful Flashcard Generator',model_client=model_client,system_message='Generate flashcards in the format that first 15 character is the question and the last 15 characters are the answer. Use spaces for padding. Char 1-15: Question (15 chars). Char 16-30: Answer (15 chars). Ensure spaces at indexes 15 .')
+
 def parse_quiz_line(line):
     # Adjusted ranges: Question 38 chars, Options 34 chars each
     correct_answer = line[0].strip()
@@ -34,12 +36,23 @@ def parse_quiz_line(line):
     print(f"Option B: {option_2}")
     print(f"Option C: {option_3}")
     print(f"Option D: {option_4}")
-    
+
+
+def get_flashcard_line(line):
+    question = line[0:15].strip()
+    answer   = line[15:30].strip()
+
+    print(f"Flashcard Question: {question}")
+    print(f"Flashcard Answer: {answer}")
 async def get_response(query:str):
     response = await Assistant.run(task=[TextMessage(content=query,source='user')])
     structured_output = response.messages[-1].content
     parse_quiz_line(structured_output)
     return structured_output
+
+async def get_flashcards(query:str):
+    response = await flashcard_Agent.run(task=[TextMessage(content=query,source='user')])
+    return response.messages[-1].content
 
 # Only run test when executing this file directly, not when importing
 if __name__ == "__main__":

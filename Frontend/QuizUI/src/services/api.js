@@ -114,4 +114,18 @@ export const generateOneQuestionWithAgent = async (previousQuestions = []) => {
   }
 };
 
+// Generate flashcards using agent
+export const generateFlashcardsWithAgent = async (numFlashcards = 5) => {
+  try {
+    const params = new URLSearchParams({
+      num_flashcards: numFlashcards,
+    });
+    const response = await api.post(`/quiz/agent/generate-flashcards?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error generating flashcards with agent:', error);
+    throw error;
+  }
+};
+
 export default api;

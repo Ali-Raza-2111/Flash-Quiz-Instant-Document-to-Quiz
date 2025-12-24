@@ -1,13 +1,13 @@
 """
-Agent Service for Quiz Generation
-Uses the AutoGen Assistant agent from agent.py to generate quiz questions from document chunks.
+Agent Service for Quiz and Flashcard Generation
+Uses the AutoGen Assistant agent from agent.py to generate quiz questions and flashcards from document chunks.
 """
 import sys
 import os
 # Add parent directory to path to import from agent.py
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent import Assistant, parse_quiz_line as agent_parse_quiz_line
+from agent import Assistant, flashcard_Agent, parse_quiz_line as agent_parse_quiz_line
 from autogen_agentchat.messages import TextMessage
 
 
@@ -152,3 +152,90 @@ Generate only 1 line following the exact character format."""
     except Exception as e:
         print(f"Error generating single question: {e}")
         return {"error": str(e)}
+
+
+# ============== FLASHCARD FUNCTIONS ==============
+
+def parse_flashcard_line(line: str) -> dict:
+    """
+    Parse a single flashcard line into structured data.
+    Format: Char 1-15: Question (15 chars), Char 16-30: Answer (15 chars)
+    """
+    try:
+        if len(line) < 30:
+            line = line.ljust(30)
+        
+        front = line[0:15].strip()
+        back = line[15:30].strip()
+        
+        if not front or not back:
+            return None
+            
+        return {
+            "front": front,
+            "back": back
+        }
+    except Exception as e:
+        print(f"Error parsing flashcard line: {e}")
+        return None
+
+
+def parse_flashcard_response(response_text: str) -> list:
+    """
+    Parse the full response from the flashcard agent into a list of flashcards.
+    """
+    flashcards = []
+    lines = response_text.strip().split('\n')
+    
+    for idx, line in enumerate(lines):
+        if line.strip():
+            parsed = parse_flashcard_line(line)
+            if parsed:
+                parsed["id"] = idx + 1
+                flashcards.append(parsed)
+    
+    return flashcards
+
+
+async def generate_flashcards_with_agent(context: str, num_flashcards: int = 5) -> dict:
+    """
+    Generate flashcards using the flashcard agent.
+    
+    Args:
+        context: The text content to generate flashcards from
+        num_flashcards: Number of flashcards to generate
+    
+    Returns:
+        dict with 'flashcards' list containing formatted flashcards
+    """
+    try:
+        prompt = f"""Based on the following text, generate exactly {num_flashcards} flashcards.
+Each flashcard should capture a key concept, term, or fact from the text.
+
+TEXT:
+{context}
+
+Remember to follow the exact character format specified. Generate {num_flashcards} lines, one per flashcard."""
+
+        # Run the flashcard_Agent (from agent.py)
+        response = await flashcard_Agent.run(task=[TextMessage(content=prompt, source='user')])
+        
+        response_content = response.messages[-1].content
+        print(f"Flashcard agent response: {response_content[:200]}...")
+        
+        # Parse the response into structured flashcard data
+        flashcards = parse_flashcard_response(response_content)
+        
+        if not flashcards:
+            return {"flashcards": [], "error": "Failed to parse flashcards from agent response"}
+        
+        return {
+            "flashcards": flashcards,
+            "total": len(flashcards)
+        }
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error in flashcard generation: {e}")
+        return {"flashcards": [], "error": str(e)}

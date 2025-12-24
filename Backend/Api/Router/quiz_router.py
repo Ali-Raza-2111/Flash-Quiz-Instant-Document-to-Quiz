@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional
 from Services.rag_service import process_pdf, generate_quiz_from_rag, generate_single_question, check_quiz_answers, get_random_chunks
-from Services.agent_service import generate_quiz_with_agent, generate_single_question_with_agent
+from Services.agent_service import generate_quiz_with_agent, generate_single_question_with_agent, generate_flashcards_with_agent
 import json
 import re
 
@@ -89,6 +89,25 @@ async def generate_one_question_agent(
     
     prev_list = previous_questions.split(",") if previous_questions else []
     result = await generate_single_question_with_agent(context, prev_list)
+    return result
+
+
+@router.post("/agent/generate-flashcards")
+async def generate_flashcards_agent(
+    num_flashcards: int = Query(5, description="Number of flashcards to generate")
+):
+    """Generate flashcards using the AutoGen flashcard agent."""
+    # Get random chunks from uploaded document
+    context = get_random_chunks(min(3, num_flashcards))
+    
+    if not context or len(context) < 50:
+        raise HTTPException(status_code=400, detail="No content found. Upload a PDF first.")
+    
+    # Limit context size for efficient processing
+    if len(context) > 1500:
+        context = context[:1500]
+    
+    result = await generate_flashcards_with_agent(context, num_flashcards)
     return result
 
 
